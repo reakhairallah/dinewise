@@ -4,6 +4,12 @@
 > flag it if a request conflicts with something below instead of silently overriding it.
 > Anything not covered here is open — use good judgment and standard practices.
 
+## Editing this file
+
+Claude Code may propose changes to this file when a rule genuinely needs to change, but must
+never write to CLAUDE.md without first stating the proposed change and getting explicit
+confirmation.
+
 ## Stack & constraints
 
 - HTML, CSS, vanilla JavaScript (ES6+) only. No frameworks, no backend, no database.
@@ -40,8 +46,11 @@ session.
   `reservations.js` (`Reservations`) → `pricing.js` (`Pricing`) → `recommendation.js`
   (`Recommendation`) → `waitlist.js` (`Waitlist`) → `qr.js` (`QR`) → `ui.js` (`UI`) →
   `init.js` (app start, inside a `DOMContentLoaded` listener).
-- Before considering a change done, concatenate them into the single delivered `app.js`, same
-  order:
+- Concatenate into the single delivered `app.js` at the end of each build-order milestone
+  below (e.g. after storage.js + Screen 1, after restaurants.js + seed data, after the
+  Explore → Book Now path), not after every individual `src/` file — this keeps `app.js`
+  diffs meaningful and lines up with the testable-slice checkpoints already defined above.
+  Same order every time:
   `cat src/storage.js src/restaurants.js src/reservations.js src/pricing.js
   src/recommendation.js src/waitlist.js src/qr.js src/ui.js src/init.js > app.js`
   Plain concatenation, not a bundler — no build tooling, no framework.
