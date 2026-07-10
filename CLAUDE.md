@@ -54,8 +54,8 @@ session.
   `cat src/storage.js src/restaurants.js src/reservations.js src/pricing.js
   src/recommendation.js src/waitlist.js src/qr.js src/ui.js src/init.js > app.js`
   Plain concatenation, not a bundler — no build tooling, no framework.
-- Final deliverable: `index.html` + `style.css` + `app.js`. `index.html` only ever references
-  the built `app.js`, never the individual `src/` files.
+- Final deliverable: `index.html` + `styles/style.css` + `app.js`. `index.html` only ever
+  references the built `app.js`, never the individual `src/` files.
 - Single `index.html` — this is an SPA, not multiple pages. Each screen is a `<section>`/`<div>`
   with a stable `id` (e.g. `#screen-signup`), shown/hidden via JS. Never navigate to a second
   `.html` file.
@@ -67,8 +67,8 @@ session.
   **design reference** (colors, typography, spacing, component look-and-feel), not a structural
   blueprint to paste in directly.
 - If a `DESIGN.md` was exported from Stitch, pull design tokens from there (palette, type scale,
-  spacing, radii, shadows) into `style.css` as custom properties/reusable classes. Build each
-  screen's actual HTML structure from the Screens section above; style it with those tokens.
+  spacing, radii, shadows) into `styles/style.css` as custom properties/reusable classes. Build
+  each screen's actual HTML structure from the Screens section above; style it with those tokens.
 
 ## Storage keys & IDs
 
