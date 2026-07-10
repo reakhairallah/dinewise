@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Restaurant · DineWise</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="styles/style.css" />
+</head>
+<body>
+
+  <section id="screen-signup" class="screen">
+    <div class="container signup-layout">
+
+      <header class="signup-brand">
+        <p class="text-label-caps signup-eyebrow">Smart Restaurant Reservations</p>
+        <h1 class="text-display-lg">DineWise</h1>
+        <p class="text-body-lg signup-tagline">
+          An elite concierge for exclusive dining. Tell us a little about yourself to begin.
+        </p>
+      </header>
+
+      <form id="signup-form" class="signup-form">
+
+        <fieldset class="form-fieldset">
+          <legend class="text-headline-sm">Your Profile</legend>
+
+          <div class="field">
+            <label class="field-label" for="field-name">Full Name</label>
+            <input class="field-input" type="text" id="field-name" name="name" placeholder="Jordan Ellis" />
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-label" for="field-email">Email</label>
+              <input class="field-input" type="email" id="field-email" name="email" placeholder="jordan@example.com" />
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="field-phone">Phone</label>
+              <input class="field-input" type="tel" id="field-phone" name="phone" placeholder="(555) 123-4567" />
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="form-fieldset">
+          <legend class="text-headline-sm">Favorite Cuisines</legend>
+          <p class="text-body-md field-hint">Select as many as you like.</p>
+
+          <div class="chip-group">
+            <label class="chip-option">
+              <input class="chip-input" type="checkbox" name="favoriteCuisines" value="italian" />
+              <span class="chip">Italian</span>
+            </label>
+            <label class="chip-option">
+              <input class="chip-input" type="checkbox" name="favoriteCuisines" value="japanese" />
+              <span class="chip">Japanese</span>
+            </label>
+            <label class="chip-option">
+              <input class="chip-input" type="checkbox" name="favoriteCuisines" value="french" />
+              <span class="chip">French</span>
+            </label>
+            <label class="chip-option">
+              <input class="chip-input" type="checkbox" name="favoriteCuisines" value="steakhouse" />
+              <span class="chip">Steakhouse</span>
+            </label>
+            <label class="chip-option">
+              <input class="chip-input" type="checkbox" name="favoriteCuisines" value="mediterranean" />
+              <span class="chip">Mediterranean</span>
+            </label>
+            <label class="chip-option">
+              <input class="chip-input" type="checkbox" name="favoriteCuisines" value="seafood" />
+              <span class="chip">Seafood</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="form-fieldset">
+          <legend class="text-headline-sm">Dietary Tags</legend>
+          <p class="text-body-md field-hint">Optional — helps us tailor recommendations.</p>
+
+          <div class="chip-group">
+            <label class="chip-option">
+              <input class="chip-input" type="checkbox" name="dietaryTags" value="vegetarian" />
+              <span class="chip">Vegetarian</span>
+            </label>
+            <label class="chip-option">
+              <input class="chip-input" type="checkbox" name="dietaryTags" value="vegan" />
+              <span class="chip">Vegan</span>
+            </label>
+            <label class="chip-option">
+              <input class="chip-input" type="checkbox" name="dietaryTags" value="gluten-free" />
+              <span class="chip">Gluten-Free</span>
+            </label>
+            <label class="chip-option">
+              <input class="chip-input" type="checkbox" name="dietaryTags" value="nut-allergy" />
+              <span class="chip">Nut Allergy</span>
+            </label>
+            <label class="chip-option">
+              <input class="chip-input" type="checkbox" name="dietaryTags" value="halal" />
+              <span class="chip">Halal</span>
+            </label>
+            <label class="chip-option">
+              <input class="chip-input" type="checkbox" name="dietaryTags" value="kosher" />
+              <span class="chip">Kosher</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="form-fieldset">
+          <legend class="text-headline-sm">Contact Preference</legend>
+
+          <div class="chip-group">
+            <label class="chip-option">
+              <input class="chip-input" type="radio" name="contactPreferences" value="email" />
+              <span class="chip">Email</span>
+            </label>
+            <label class="chip-option">
+              <input class="chip-input" type="radio" name="contactPreferences" value="sms" />
+              <span class="chip">SMS</span>
+            </label>
+            <label class="chip-option">
+              <input class="chip-input" type="radio" name="contactPreferences" value="phone" />
+              <span class="chip">Phone Call</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="form-fieldset">
+          <legend class="text-headline-sm">Continue As</legend>
+
+          <div class="role-picker">
+            <label class="role-card">
+              <input class="role-input" type="radio" name="role" value="customer" />
+              <span class="role-card-body">
+                <span class="text-headline-sm role-card-title">Guest</span>
+                <span class="text-body-md role-card-desc">
+                  Explore restaurants, book tables, and manage your reservations.
+                </span>
+              </span>
+            </label>
+
+            <label class="role-card">
+              <input class="role-input" type="radio" name="role" value="admin" />
+              <span class="role-card-body">
+                <span class="text-headline-sm role-card-title">Admin</span>
+                <span class="text-body-md role-card-desc">
+                  Manage the restaurant roster, tables, and pricing.
+                </span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
+        <button type="submit" class="btn btn-primary signup-submit">Continue</button>
+
+      </form>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+</body>
+</html>

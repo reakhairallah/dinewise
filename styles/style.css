@@ -165,6 +165,15 @@ body {
   background-color: var(--color-background);
 }
 
+/* Each screen is a full section shown/hidden by app.js; only one is visible at a time. */
+.screen {
+  min-height: 100vh;
+}
+
+.screen[hidden] {
+  display: none;
+}
+
 img,
 picture {
   max-width: 100%;
@@ -380,6 +389,32 @@ a {
   font-family: var(--font-sans);
   font-size: var(--text-label-caps-size);
   color: var(--color-on-secondary-container);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+/* Chip driven by a visually-hidden checkbox/radio input (see .chip-option) */
+.chip-option {
+  position: relative;
+}
+
+.chip-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.chip-input:checked + .chip {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.chip-input:focus-visible + .chip {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* =========================================================
@@ -443,4 +478,130 @@ a {
   backdrop-filter: blur(var(--blur-nav));
   -webkit-backdrop-filter: blur(var(--blur-nav));
   border-bottom: var(--border-ghost);
+}
+
+/* =========================================================
+   Screen 1 — Sign Up / Role Picker
+   ========================================================= */
+.signup-layout {
+  max-width: 640px;
+  padding-block: var(--space-8);
+}
+
+.signup-brand {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.signup-eyebrow {
+  color: var(--color-primary);
+  margin-bottom: var(--space-1);
+}
+
+.signup-tagline {
+  color: var(--color-on-surface-variant);
+  margin-top: var(--space-2);
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.form-fieldset {
+  border: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.form-fieldset legend {
+  color: var(--color-on-surface);
+  margin-bottom: var(--space-1);
+  padding: 0;
+}
+
+.field-hint {
+  color: var(--color-on-surface-variant);
+  margin-top: -4px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+@media (max-width: 600px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.role-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+@media (max-width: 600px) {
+  .role-picker {
+    grid-template-columns: 1fr;
+  }
+}
+
+.role-card {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.role-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-container);
+  border: 1px solid var(--color-outline-variant);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.role-card-title {
+  color: var(--color-on-surface);
+}
+
+.role-card-desc {
+  color: var(--color-on-surface-variant);
+}
+
+.role-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.role-input:checked + .role-card-body {
+  background-color: var(--color-secondary-container);
+  border-color: var(--color-primary);
+}
+
+.role-input:focus-visible + .role-card-body {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.signup-submit {
+  width: 100%;
+  margin-top: var(--space-2);
 }
