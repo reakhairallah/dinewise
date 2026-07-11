@@ -72,15 +72,16 @@ session.
 
 ## Storage keys & IDs
 
-- localStorage keys: `dinewise_<entity>_v1` (e.g. `dinewise_guest_v1`, `dinewise_restaurants_v1`,
-  `dinewise_reservations_v1`, `dinewise_waitlist_v1`). The `_v1` suffix exists so a future shape
-  change can migrate or discard old data without guessing which keys are stale.
+- localStorage keys: `dinewise_<entity>_v1` (e.g. `dinewise_guest_v1`, `dinewise_session_v1`,
+  `dinewise_restaurants_v1`, `dinewise_reservations_v1`, `dinewise_waitlist_v1`). The `_v1`
+  suffix exists so a future shape change can migrate or discard old data without guessing
+  which keys are stale.
 - All generated IDs use `crypto.randomUUID()` — no manual counters.
 
 ## Data model (conceptual — implement exact shape as needed)
 
 - **Guest profile** — one per browser, created once: name, email, phone, favoriteCuisines[],
-  dietaryTags[], contactPreferences. Membership is not yet decided (see Deferred) — don't add
+  dietaryTags[]. Membership is not yet decided (see Deferred) — don't add
   an `isMember` field until that's settled.
 - **Session role** — `'customer' | 'admin'`. Separate from the profile. Stored in `localStorage`
   (survives refresh); cleared only by the explicit Log Out control, never auto-cleared. Profile

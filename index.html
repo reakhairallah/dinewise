@@ -32,13 +32,13 @@
 
           <div class="field">
             <label class="field-label" for="field-name">Full Name</label>
-            <input class="field-input" type="text" id="field-name" name="name" placeholder="Jordan Ellis" />
+            <input class="field-input" type="text" id="field-name" name="name" placeholder="Jordan Ellis" required />
           </div>
 
           <div class="field-row">
             <div class="field">
               <label class="field-label" for="field-email">Email</label>
-              <input class="field-input" type="email" id="field-email" name="email" placeholder="jordan@example.com" />
+              <input class="field-input" type="email" id="field-email" name="email" placeholder="jordan@example.com" required />
             </div>
 
             <div class="field">
@@ -49,94 +49,11 @@
         </fieldset>
 
         <fieldset class="form-fieldset">
-          <legend class="text-headline-sm">Favorite Cuisines</legend>
-          <p class="text-body-md field-hint">Select as many as you like.</p>
-
-          <div class="chip-group">
-            <label class="chip-option">
-              <input class="chip-input" type="checkbox" name="favoriteCuisines" value="italian" />
-              <span class="chip">Italian</span>
-            </label>
-            <label class="chip-option">
-              <input class="chip-input" type="checkbox" name="favoriteCuisines" value="japanese" />
-              <span class="chip">Japanese</span>
-            </label>
-            <label class="chip-option">
-              <input class="chip-input" type="checkbox" name="favoriteCuisines" value="french" />
-              <span class="chip">French</span>
-            </label>
-            <label class="chip-option">
-              <input class="chip-input" type="checkbox" name="favoriteCuisines" value="steakhouse" />
-              <span class="chip">Steakhouse</span>
-            </label>
-            <label class="chip-option">
-              <input class="chip-input" type="checkbox" name="favoriteCuisines" value="mediterranean" />
-              <span class="chip">Mediterranean</span>
-            </label>
-            <label class="chip-option">
-              <input class="chip-input" type="checkbox" name="favoriteCuisines" value="seafood" />
-              <span class="chip">Seafood</span>
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset class="form-fieldset">
-          <legend class="text-headline-sm">Dietary Tags</legend>
-          <p class="text-body-md field-hint">Optional — helps us tailor recommendations.</p>
-
-          <div class="chip-group">
-            <label class="chip-option">
-              <input class="chip-input" type="checkbox" name="dietaryTags" value="vegetarian" />
-              <span class="chip">Vegetarian</span>
-            </label>
-            <label class="chip-option">
-              <input class="chip-input" type="checkbox" name="dietaryTags" value="vegan" />
-              <span class="chip">Vegan</span>
-            </label>
-            <label class="chip-option">
-              <input class="chip-input" type="checkbox" name="dietaryTags" value="gluten-free" />
-              <span class="chip">Gluten-Free</span>
-            </label>
-            <label class="chip-option">
-              <input class="chip-input" type="checkbox" name="dietaryTags" value="nut-allergy" />
-              <span class="chip">Nut Allergy</span>
-            </label>
-            <label class="chip-option">
-              <input class="chip-input" type="checkbox" name="dietaryTags" value="halal" />
-              <span class="chip">Halal</span>
-            </label>
-            <label class="chip-option">
-              <input class="chip-input" type="checkbox" name="dietaryTags" value="kosher" />
-              <span class="chip">Kosher</span>
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset class="form-fieldset">
-          <legend class="text-headline-sm">Contact Preference</legend>
-
-          <div class="chip-group">
-            <label class="chip-option">
-              <input class="chip-input" type="radio" name="contactPreferences" value="email" />
-              <span class="chip">Email</span>
-            </label>
-            <label class="chip-option">
-              <input class="chip-input" type="radio" name="contactPreferences" value="sms" />
-              <span class="chip">SMS</span>
-            </label>
-            <label class="chip-option">
-              <input class="chip-input" type="radio" name="contactPreferences" value="phone" />
-              <span class="chip">Phone Call</span>
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset class="form-fieldset">
           <legend class="text-headline-sm">Continue As</legend>
 
           <div class="role-picker">
             <label class="role-card">
-              <input class="role-input" type="radio" name="role" value="customer" />
+              <input class="role-input" type="radio" name="role" value="customer" required />
               <span class="role-card-body">
                 <span class="text-headline-sm role-card-title">Guest</span>
                 <span class="text-body-md role-card-desc">
@@ -156,6 +73,72 @@
             </label>
           </div>
         </fieldset>
+
+        <div id="guest-only-fields" hidden>
+          <fieldset class="form-fieldset">
+            <legend class="text-headline-sm">Favorite Cuisines</legend>
+            <p class="text-body-md field-hint">Select as many as you like.</p>
+
+            <div class="chip-group">
+              <label class="chip-option">
+                <input class="chip-input" type="checkbox" name="favoriteCuisines" value="italian" />
+                <span class="chip">Italian</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="checkbox" name="favoriteCuisines" value="japanese" />
+                <span class="chip">Japanese</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="checkbox" name="favoriteCuisines" value="french" />
+                <span class="chip">French</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="checkbox" name="favoriteCuisines" value="steakhouse" />
+                <span class="chip">Steakhouse</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="checkbox" name="favoriteCuisines" value="mediterranean" />
+                <span class="chip">Mediterranean</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="checkbox" name="favoriteCuisines" value="seafood" />
+                <span class="chip">Seafood</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-fieldset">
+            <legend class="text-headline-sm">Dietary Tags</legend>
+            <p class="text-body-md field-hint">Optional — helps us tailor recommendations.</p>
+
+            <div class="chip-group">
+              <label class="chip-option">
+                <input class="chip-input" type="checkbox" name="dietaryTags" value="vegetarian" />
+                <span class="chip">Vegetarian</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="checkbox" name="dietaryTags" value="vegan" />
+                <span class="chip">Vegan</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="checkbox" name="dietaryTags" value="gluten-free" />
+                <span class="chip">Gluten-Free</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="checkbox" name="dietaryTags" value="nut-allergy" />
+                <span class="chip">Nut Allergy</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="checkbox" name="dietaryTags" value="halal" />
+                <span class="chip">Halal</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="checkbox" name="dietaryTags" value="kosher" />
+                <span class="chip">Kosher</span>
+              </label>
+            </div>
+          </fieldset>
+        </div>
 
         <button type="submit" class="btn btn-primary signup-submit">Continue</button>
 

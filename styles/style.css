@@ -509,6 +509,12 @@ a {
   gap: var(--space-5);
 }
 
+#guest-only-fields:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
 .form-fieldset {
   border: none;
   padding: 0;
