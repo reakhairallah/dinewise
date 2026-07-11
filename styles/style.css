@@ -534,6 +534,11 @@ a {
   margin-top: -4px;
 }
 
+.field-error {
+  color: var(--color-error);
+  margin-top: var(--space-1);
+}
+
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

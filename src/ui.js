@@ -7,12 +7,16 @@ const UI = {
       phone: document.getElementById('field-phone'),
     };
     this.guestOnlyFields = document.getElementById('guest-only-fields');
+    this.roleError = document.getElementById('role-error');
 
     this.prefillFromProfile();
     this.updateGuestFieldsVisibility();
     this.form.addEventListener('submit', (event) => this.handleSignupSubmit(event));
     this.form.querySelectorAll('input[name="role"]').forEach((input) => {
-      input.addEventListener('change', () => this.updateGuestFieldsVisibility());
+      input.addEventListener('change', () => {
+        this.updateGuestFieldsVisibility();
+        this.roleError.hidden = true;
+      });
     });
   },
 
@@ -57,7 +61,11 @@ const UI = {
     event.preventDefault();
 
     const role = this.getCheckedValue('role');
-    if (!role) return;
+    if (!role) {
+      this.roleError.hidden = false;
+      this.roleError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
 
     const existingGuest = Storage.get('dinewise_guest_v1');
 

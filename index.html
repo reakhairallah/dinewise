@@ -53,7 +53,7 @@
 
           <div class="role-picker">
             <label class="role-card">
-              <input class="role-input" type="radio" name="role" value="customer" required />
+              <input class="role-input" type="radio" name="role" value="customer" />
               <span class="role-card-body">
                 <span class="text-headline-sm role-card-title">Guest</span>
                 <span class="text-body-md role-card-desc">
@@ -72,6 +72,10 @@
               </span>
             </label>
           </div>
+
+          <p id="role-error" class="text-body-md field-error" hidden>
+            Please choose Guest or Admin to save your changes.
+          </p>
         </fieldset>
 
         <div id="guest-only-fields" hidden>
