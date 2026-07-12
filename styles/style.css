@@ -62,16 +62,16 @@
   --color-on-error-container: #ffdad6;
 
   /* Typography */
-  --font-serif: 'Space Grotesk', var(--font-sans);
+  --font-serif: 'Manrope', var(--font-sans);
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 
   --text-display-lg-size: 48px;
-  --text-display-lg-weight: 700;
+  --text-display-lg-weight: 600;
   --text-display-lg-leading: 1.1;
   --text-display-lg-tracking: -0.02em;
 
   --text-display-lg-mobile-size: 36px;
-  --text-display-lg-mobile-weight: 700;
+  --text-display-lg-mobile-weight: 600;
   --text-display-lg-mobile-leading: 1.2;
 
   --text-headline-md-size: 32px;
@@ -646,9 +646,9 @@ a {
 }
 
 .brand-wordmark {
-  font-family: var(--font-sans);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .nav-links {
