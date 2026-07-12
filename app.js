@@ -228,12 +228,59 @@ const UI = {
   },
 
   goToRoleScreen(role) {
-    // Explore (customer) and Admin Dashboard (admin) screens don't exist yet —
-    // this is the single hook later screens will replace.
+    if (role === 'customer') {
+      this.showScreen('screen-explore');
+      return;
+    }
+
+    // Admin Dashboard doesn't exist yet — this is the hook it will replace.
     console.log(`Signed in as ${role}.`, Storage.get('dinewise_guest_v1'));
+  },
+
+  showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach((screen) => {
+      screen.hidden = screen.id !== screenId;
+    });
+  },
+
+  renderExplore() {
+    const grid = document.getElementById('restaurant-grid');
+    if (!grid) return;
+
+    grid.innerHTML = Restaurants.list().map((restaurant) => this.renderRestaurantCard(restaurant)).join('');
+  },
+
+  renderRestaurantCard(restaurant) {
+    const badges = (values, chipClass = '') => values
+      .map((value) => `<span class="chip ${chipClass}">${value}</span>`)
+      .join('');
+
+    return `
+      <article class="card">
+        <img class="card-image" src="${restaurant.photoUrl}" alt="${restaurant.title}" />
+        <div class="card-body">
+          <h3 class="card-title">${restaurant.title}</h3>
+          <p class="text-body-md card-meta">
+            <span>${restaurant.cuisine}</span>
+            <span aria-hidden="true">·</span>
+            <span>${restaurant.hours}</span>
+          </p>
+          <p class="text-body-md card-meta">
+            <span class="card-rating">★ ${restaurant.rating}</span>
+            <span aria-hidden="true">·</span>
+            <span>${restaurant.distanceMiles} mi</span>
+          </p>
+          <div class="card-badges">
+            ${badges(restaurant.sustainabilityBadges)}
+            ${badges(restaurant.allergenBadges, 'chip-allergen')}
+          </div>
+        </div>
+      </article>
+    `;
   },
 };
 document.addEventListener('DOMContentLoaded', () => {
   Restaurants.seed();
   UI.init();
+  UI.renderExplore();
 });

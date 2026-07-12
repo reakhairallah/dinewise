@@ -32,18 +32,18 @@
 
           <div class="field">
             <label class="field-label" for="field-name">Full Name</label>
-            <input class="field-input" type="text" id="field-name" name="name" placeholder="Jordan Ellis" required />
+            <input autocomplete="off" class="field-input" type="text" id="field-name" name="name" placeholder="Jordan Ellis" required />
           </div>
 
           <div class="field-row">
             <div class="field">
               <label class="field-label" for="field-email">Email</label>
-              <input class="field-input" type="email" id="field-email" name="email" placeholder="jordan@example.com" required />
+              <input autocomplete="off" class="field-input" type="email" id="field-email" name="email" placeholder="jordan@example.com" required />
             </div>
 
             <div class="field">
               <label class="field-label" for="field-phone">Phone</label>
-              <input class="field-input" type="tel" id="field-phone" name="phone" placeholder="(555) 123-4567" />
+              <input autocomplete="off" class="field-input" type="tel" id="field-phone" name="phone" placeholder="(555) 123-4567" />
             </div>
           </div>
         </fieldset>
@@ -147,6 +147,103 @@
         <button type="submit" class="btn btn-primary signup-submit">Continue</button>
 
       </form>
+    </div>
+  </section>
+
+  <section id="screen-explore" class="screen" hidden>
+
+    <header class="nav-glass explore-nav">
+      <div class="container explore-nav-inner">
+        <p class="text-headline-sm explore-brand">Nocturne Reserve</p>
+      </div>
+    </header>
+
+    <div class="container section explore-layout">
+
+      <div class="explore-intro">
+        <p class="text-label-caps explore-eyebrow">Concierge</p>
+        <h1 class="text-display-lg">Where shall we seat you tonight?</h1>
+        <p class="text-body-lg explore-tagline">
+          Curated for your taste — filter by cuisine or let our concierge match the mood.
+        </p>
+      </div>
+
+      <nav class="filter-bar explore-filter-bar" aria-label="Filter by cuisine">
+        <button type="button" class="filter-item is-active">All</button>
+        <button type="button" class="filter-item">Italian</button>
+        <button type="button" class="filter-item">Japanese</button>
+        <button type="button" class="filter-item">French</button>
+        <button type="button" class="filter-item">Steakhouse</button>
+        <button type="button" class="filter-item">Mediterranean</button>
+        <button type="button" class="filter-item">Seafood</button>
+      </nav>
+
+      <details class="smart-match">
+        <summary class="text-headline-sm smart-match-summary">
+          Smart Match — tell us the mood, budget, and distance
+        </summary>
+
+        <div class="smart-match-body">
+          <div class="form-fieldset">
+            <p class="field-label">Mood</p>
+            <div class="chip-group">
+              <label class="chip-option">
+                <input class="chip-input" type="radio" name="smartMood" value="cozy" />
+                <span class="chip">Cozy</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="radio" name="smartMood" value="lively" />
+                <span class="chip">Lively</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="radio" name="smartMood" value="romantic" />
+                <span class="chip">Romantic</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="radio" name="smartMood" value="adventurous" />
+                <span class="chip">Adventurous</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-fieldset">
+            <p class="field-label">Budget</p>
+            <div class="chip-group">
+              <label class="chip-option">
+                <input class="chip-input" type="radio" name="smartBudget" value="1" />
+                <span class="chip">$</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="radio" name="smartBudget" value="2" />
+                <span class="chip">$$</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="radio" name="smartBudget" value="3" />
+                <span class="chip">$$$</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="radio" name="smartBudget" value="4" />
+                <span class="chip">$$$$</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-fieldset">
+            <label class="field-label" for="smart-distance">Distance</label>
+            <select class="field-input" id="smart-distance" name="smartDistance">
+              <option value="1">Within 1 mile</option>
+              <option value="3">Within 3 miles</option>
+              <option value="5">Within 5 miles</option>
+              <option value="any">Any distance</option>
+            </select>
+          </div>
+
+          <button type="button" class="btn btn-primary smart-match-submit">Find My Table</button>
+        </div>
+      </details>
+
+      <div id="restaurant-grid" class="restaurant-grid"></div>
+
     </div>
   </section>
 

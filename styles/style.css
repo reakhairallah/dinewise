@@ -616,3 +616,113 @@ a {
   width: 100%;
   margin-top: var(--space-2);
 }
+
+/* =========================================================
+   Screen 3 — Explore
+   ========================================================= */
+.explore-nav-inner {
+  display: flex;
+  align-items: center;
+  padding-block: var(--space-2);
+}
+
+.explore-brand {
+  color: var(--color-on-surface);
+}
+
+.explore-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.explore-intro {
+  max-width: 640px;
+}
+
+.explore-eyebrow {
+  color: var(--color-primary);
+  margin-bottom: var(--space-1);
+}
+
+.explore-tagline {
+  color: var(--color-on-surface-variant);
+  margin-top: var(--space-2);
+}
+
+.explore-filter-bar {
+  border-bottom: 1px solid var(--color-outline-variant);
+  padding-bottom: var(--space-2);
+}
+
+/* Smart Match — native <details>/<summary>, no JS needed to expand/collapse */
+.smart-match {
+  background-color: var(--color-surface-container);
+  border: var(--border-ghost);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+}
+
+.smart-match-summary {
+  cursor: pointer;
+  color: var(--color-on-surface);
+  list-style: none;
+}
+
+.smart-match-summary::-webkit-details-marker {
+  display: none;
+}
+
+.smart-match-summary::before {
+  content: '+';
+  display: inline-block;
+  width: 1em;
+  margin-right: var(--space-1);
+  color: var(--color-primary);
+}
+
+.smart-match[open] .smart-match-summary::before {
+  content: '−';
+}
+
+.smart-match-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.smart-match-submit {
+  align-self: flex-start;
+}
+
+/* Restaurant grid + cards (rendered from Restaurants.list() via UI.renderExplore) */
+.restaurant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--gutter);
+}
+
+.card-meta {
+  display: flex;
+  gap: var(--space-1);
+  color: var(--color-on-surface-variant);
+  margin-top: var(--space-1);
+}
+
+.card-rating {
+  color: var(--color-primary);
+}
+
+.card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.chip-allergen {
+  background-color: transparent;
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
