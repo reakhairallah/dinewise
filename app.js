@@ -168,6 +168,7 @@ const UI = {
     });
     document.getElementById('nav-logout')?.addEventListener('click', () => this.handleLogout());
     this.bindNavDropdowns();
+    this.bindFilterChips();
   },
 
   bindNavDropdowns() {
@@ -176,6 +177,28 @@ const UI = {
       dropdowns.forEach((dropdown) => {
         if (!dropdown.contains(event.target)) dropdown.removeAttribute('open');
       });
+    });
+  },
+
+  bindFilterChips() {
+    const filterChips = document.querySelectorAll('.filter-chip');
+    filterChips.forEach((chip) => {
+      chip.addEventListener('toggle', () => {
+        if (!chip.open) return;
+        filterChips.forEach((other) => {
+          if (other !== chip) other.removeAttribute('open');
+        });
+      });
+    });
+
+    document.addEventListener('click', (event) => {
+      filterChips.forEach((chip) => {
+        if (chip.open && !chip.contains(event.target)) chip.removeAttribute('open');
+      });
+    });
+
+    document.getElementById('preferences-chip')?.addEventListener('click', (event) => {
+      event.currentTarget.classList.toggle('is-active');
     });
   },
 
