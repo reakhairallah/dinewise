@@ -151,14 +151,30 @@ const UI = {
     };
     this.guestOnlyFields = document.getElementById('guest-only-fields');
     this.roleError = document.getElementById('role-error');
+    this.navAvatarInitials = document.getElementById('nav-avatar-initials');
 
     this.prefillFromProfile();
     this.updateGuestFieldsVisibility();
+    this.renderNavProfile();
     this.form.addEventListener('submit', (event) => this.handleSignupSubmit(event));
     this.form.querySelectorAll('input[name="role"]').forEach((input) => {
       input.addEventListener('change', () => {
         this.updateGuestFieldsVisibility();
         this.roleError.hidden = true;
+        if (input.value === 'customer' && input.checked) {
+          this.guestOnlyFields.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+    document.getElementById('nav-logout')?.addEventListener('click', () => this.handleLogout());
+    this.bindNavDropdowns();
+  },
+
+  bindNavDropdowns() {
+    const dropdowns = document.querySelectorAll('.nav-dropdown');
+    document.addEventListener('click', (event) => {
+      dropdowns.forEach((dropdown) => {
+        if (!dropdown.contains(event.target)) dropdown.removeAttribute('open');
       });
     });
   },
@@ -224,7 +240,28 @@ const UI = {
     Storage.set('dinewise_guest_v1', guest);
     Storage.set('dinewise_session_v1', { role });
 
+    this.renderNavProfile();
     this.goToRoleScreen(role);
+  },
+
+  renderNavProfile() {
+    if (!this.navAvatarInitials) return;
+
+    const name = Storage.get('dinewise_guest_v1')?.name?.trim();
+    const initials = name
+      ? name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0].toUpperCase()).join('')
+      : 'G';
+
+    this.navAvatarInitials.textContent = initials;
+  },
+
+  handleLogout() {
+    Storage.set('dinewise_session_v1', null);
+    this.form.querySelectorAll('input[name="role"]').forEach((input) => { input.checked = false; });
+    this.updateGuestFieldsVisibility();
+    this.roleError.hidden = true;
+    document.querySelectorAll('.nav-dropdown').forEach((dropdown) => dropdown.removeAttribute('open'));
+    this.showScreen('screen-signup');
   },
 
   goToRoleScreen(role) {
@@ -237,10 +274,19 @@ const UI = {
     console.log(`Signed in as ${role}.`, Storage.get('dinewise_guest_v1'));
   },
 
+  routeInitialScreen() {
+    const guest = Storage.get('dinewise_guest_v1');
+    const session = Storage.get('dinewise_session_v1');
+    if (!guest || !session?.role) return;
+
+    this.goToRoleScreen(session.role);
+  },
+
   showScreen(screenId) {
     document.querySelectorAll('.screen').forEach((screen) => {
       screen.hidden = screen.id !== screenId;
     });
+    window.scrollTo(0, 0);
   },
 
   renderExplore() {
@@ -283,4 +329,5 @@ document.addEventListener('DOMContentLoaded', () => {
   Restaurants.seed();
   UI.init();
   UI.renderExplore();
+  UI.routeInitialScreen();
 });
