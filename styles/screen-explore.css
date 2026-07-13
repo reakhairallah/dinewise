@@ -1,0 +1,142 @@
+/* =========================================================
+   Screen 3 — Explore
+   ========================================================= */
+.explore-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.explore-intro {
+  max-width: 640px;
+}
+
+/* Filter row — 3 chip-triggered filters, each a <details>/<summary> so the
+   dropdown opens/closes with no JS. Row scrolls horizontally if it can't fit. */
+.filter-row {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: nowrap;
+}
+
+.filter-chip {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.filter-chip-summary {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.filter-chip-summary::-webkit-details-marker {
+  display: none;
+}
+
+button.filter-chip-summary {
+  font-family: var(--font-sans);
+  font-size: var(--text-label-caps-size);
+}
+
+button.filter-chip-summary:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.filter-chip-panel {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  z-index: 20;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background-color: var(--color-surface-container);
+  border: var(--border-ghost);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-3);
+}
+
+/* AI-flavored filters (Based on your preferences / Smart Match) — gradient
+   glow + a pulsing sparkle badge distinguish them from the plain Filters chip. */
+button.filter-chip-ai.is-active,
+.filter-chip-ai[open] > .filter-chip-summary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: 0 0 0 1px rgb(233 193 118 / 40%), 0 0 18px rgb(233 193 118 / 35%);
+}
+
+button.filter-chip-ai.is-active::after,
+.filter-chip-ai[open] > .filter-chip-summary::after {
+  content: '✦';
+  position: absolute;
+  top: -7px;
+  right: -6px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--color-primary-fixed);
+  animation: sparkle-pulse 1.6s ease-in-out infinite;
+}
+
+.filter-chip-ai .filter-chip-panel {
+  border: 1px solid transparent;
+  background-image:
+    linear-gradient(var(--color-surface-container), var(--color-surface-container)),
+    linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  box-shadow: var(--shadow-card), 0 0 28px rgb(233 193 118 / 22%);
+}
+
+@keyframes sparkle-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.smart-match-submit {
+  align-self: flex-start;
+}
+
+/* Restaurant grid + cards (rendered from Restaurants.list() via UI.renderExplore) */
+.restaurant-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--gutter);
+}
+
+.card-meta {
+  display: flex;
+  gap: var(--space-1);
+  color: var(--color-on-surface-variant);
+  margin-top: var(--space-1);
+}
+
+.card-rating {
+  color: var(--color-primary);
+}
+
+.card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.chip-allergen {
+  background-color: transparent;
+  border-color: var(--color-error);
+  color: var(--color-error);
+}

@@ -41,21 +41,18 @@ session.
 
 ## Code organization
 
-- Develop in separate files under `src/`, each exposing one namespace object, in this
-  dependency order: `storage.js` (`Storage`) → `restaurants.js` (`Restaurants`) →
-  `reservations.js` (`Reservations`) → `pricing.js` (`Pricing`) → `recommendation.js`
-  (`Recommendation`) → `waitlist.js` (`Waitlist`) → `qr.js` (`QR`) → `ui.js` (`UI`) →
-  `init.js` (app start, inside a `DOMContentLoaded` listener).
-- Concatenate into the single delivered `app.js` at the end of each build-order milestone
-  below (e.g. after storage.js + Screen 1, after restaurants.js + seed data, after the
-  Explore → Book Now path), not after every individual `src/` file — this keeps `app.js`
-  diffs meaningful and lines up with the testable-slice checkpoints already defined above.
-  Same order every time:
-  `cat src/storage.js src/restaurants.js src/reservations.js src/pricing.js
-  src/recommendation.js src/waitlist.js src/qr.js src/ui.js src/init.js > app.js`
-  Plain concatenation, not a bundler — no build tooling, no framework.
-- Final deliverable: `index.html` + `styles/style.css` + `app.js`. `index.html` only ever
-  references the built `app.js`, never the individual `src/` files.
+- Develop in separate files under `src/`, each exposing one namespace object (except
+  `seed-data.js`, which just provides fixture-generation globals for `restaurants.js`'s
+  `seed()`), in this dependency order: `storage.js` (`Storage`) → `seed-data.js` →
+  `restaurants.js` (`Restaurants`) → `reservations.js` (`Reservations`) → `pricing.js`
+  (`Pricing`) → `recommendation.js` (`Recommendation`) → `waitlist.js` (`Waitlist`) →
+  `qr.js` (`QR`) → `ui.js` (`UI`) → `init.js` (app start, inside a `DOMContentLoaded`
+  listener).
+- Each `src/` file is loaded directly via its own `<script>` tag in `index.html`, in dependency
+  order: storage.js → seed-data.js → restaurants.js → reservations.js → pricing.js →
+  recommendation.js → waitlist.js → qr.js → ui.js → init.js. No concatenation step, no bundler.
+- Final deliverable: `index.html` + split files under `src/` and `styles/`. No single
+  `app.js` or single `style.css` — multiple files confirmed acceptable.
 - Single `index.html` — this is an SPA, not multiple pages. Each screen is a `<section>`/`<div>`
   with a stable `id` (e.g. `#screen-signup`), shown/hidden via JS. Never navigate to a second
   `.html` file.
@@ -67,7 +64,7 @@ session.
   **design reference** (colors, typography, spacing, component look-and-feel), not a structural
   blueprint to paste in directly.
 - If a `DESIGN.md` was exported from Stitch, pull design tokens from there (palette, type scale,
-  spacing, radii, shadows) into `styles/style.css` as custom properties/reusable classes. Build
+  spacing, radii, shadows) into `styles/base.css` as custom properties/reusable classes. Build
   each screen's actual HTML structure from the Screens section above; style it with those tokens.
 
 ## Storage keys & IDs

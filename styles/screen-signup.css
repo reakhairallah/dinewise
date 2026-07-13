@@ -1,0 +1,130 @@
+/* =========================================================
+   Screen 1 — Sign Up / Role Picker
+   ========================================================= */
+.signup-layout {
+  max-width: 640px;
+  padding-block: var(--space-8);
+}
+
+.signup-brand {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.signup-eyebrow {
+  color: var(--color-primary);
+  margin-bottom: var(--space-1);
+}
+
+.signup-tagline {
+  color: var(--color-on-surface-variant);
+  margin-top: var(--space-2);
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+#guest-only-fields:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.form-fieldset {
+  border: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.form-fieldset legend {
+  color: var(--color-on-surface);
+  margin-bottom: var(--space-1);
+  padding: 0;
+}
+
+.field-hint {
+  color: var(--color-on-surface-variant);
+  margin-top: -4px;
+}
+
+.field-error {
+  color: var(--color-error);
+  margin-top: var(--space-1);
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+@media (max-width: 600px) {
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.role-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+@media (max-width: 600px) {
+  .role-picker {
+    grid-template-columns: 1fr;
+  }
+}
+
+.role-card {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.role-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface-container);
+  border: 1px solid var(--color-outline-variant);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.role-card-title {
+  color: var(--color-on-surface);
+}
+
+.role-card-desc {
+  color: var(--color-on-surface-variant);
+}
+
+.role-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.role-input:checked + .role-card-body {
+  background-color: var(--color-secondary-container);
+  border-color: var(--color-primary);
+}
+
+.role-input:focus-visible + .role-card-body {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.signup-submit {
+  width: 100%;
+  margin-top: var(--space-2);
+}
