@@ -1,0 +1,138 @@
+/* =========================================================
+   Screen 4 — Restaurant View (overlay on top of Explore)
+   ========================================================= */
+.restaurant-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  padding: var(--space-5) var(--margin-mobile);
+}
+
+.restaurant-overlay[hidden] {
+  display: none;
+}
+
+.restaurant-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 60%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: -1;
+}
+
+.restaurant-overlay-panel {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  height: fit-content;
+  background-color: var(--color-surface-container);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.restaurant-overlay-close {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background-color: rgb(18 20 18 / 60%);
+  color: var(--color-on-surface);
+  border: none;
+  cursor: pointer;
+}
+
+.restaurant-overlay-close:hover {
+  background-color: rgb(18 20 18 / 85%);
+}
+
+.restaurant-overlay-photo {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.restaurant-overlay-body {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.restaurant-overlay-meta {
+  display: flex;
+  gap: var(--space-1);
+  color: var(--color-on-surface-variant);
+}
+
+.restaurant-overlay-badges {
+  margin-top: var(--space-1);
+}
+
+.restaurant-menu-toggle {
+  margin-top: var(--space-3);
+}
+
+.restaurant-menu-summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--color-on-surface);
+}
+
+.restaurant-menu-summary::-webkit-details-marker {
+  display: none;
+}
+
+.restaurant-menu-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.menu-category-title {
+  color: var(--color-on-surface-variant);
+  margin-bottom: var(--space-1);
+}
+
+.menu-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.menu-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-block: 6px;
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.menu-item-name {
+  color: var(--color-on-surface);
+}
+
+.menu-item-price {
+  color: var(--color-on-surface-variant);
+  white-space: nowrap;
+}
+
+.restaurant-overlay-book {
+  width: 100%;
+  margin-top: var(--space-3);
+}

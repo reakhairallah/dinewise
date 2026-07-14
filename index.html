@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="styles/components.css" />
   <link rel="stylesheet" href="styles/screen-signup.css" />
   <link rel="stylesheet" href="styles/screen-explore.css" />
+  <link rel="stylesheet" href="styles/screen-restaurant-view.css" />
 </head>
 <body>
 
@@ -355,6 +356,44 @@
 
       <div id="restaurant-grid" class="restaurant-grid"></div>
 
+    </div>
+  </section>
+
+  <!-- Screen 4 — Restaurant View: a true overlay on top of Explore, not a
+       screen swap. #screen-explore stays mounted and unhidden underneath. -->
+  <section id="restaurant-view-overlay" class="restaurant-overlay" hidden>
+    <div class="restaurant-overlay-backdrop"></div>
+
+    <div class="restaurant-overlay-panel">
+      <button type="button" id="restaurant-view-close" class="restaurant-overlay-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
+        </svg>
+      </button>
+
+      <img id="restaurant-view-photo" class="restaurant-overlay-photo" src="" alt="" />
+
+      <div class="restaurant-overlay-body">
+        <h2 id="restaurant-view-title" class="text-display-lg"></h2>
+
+        <p class="text-body-md restaurant-overlay-meta">
+          <span id="restaurant-view-cuisine"></span>
+          <span aria-hidden="true">·</span>
+          <span id="restaurant-view-hours"></span>
+        </p>
+        <p class="text-body-md restaurant-overlay-meta">
+          <span class="card-rating" id="restaurant-view-rating"></span>
+        </p>
+
+        <div id="restaurant-view-badges" class="card-badges restaurant-overlay-badges"></div>
+
+        <details class="restaurant-menu-toggle">
+          <summary class="text-headline-sm restaurant-menu-summary">View Menu</summary>
+          <div id="restaurant-view-menu" class="restaurant-menu-body"></div>
+        </details>
+
+        <button type="button" class="btn btn-primary restaurant-overlay-book">Book Now</button>
+      </div>
     </div>
   </section>
 

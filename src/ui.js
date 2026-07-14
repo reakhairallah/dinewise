@@ -19,6 +19,31 @@ const getCheckedValue = (root, name) => {
   return checked ? checked.value : null;
 };
 
+const groupMenuItemsByCategory = (menuItems) => menuItems.reduce((groups, item) => {
+  (groups[item.category] ??= []).push(item);
+  return groups;
+}, {});
+
+// Renders a restaurant's menu grouped by category. Read-only by default
+// (Restaurant View's "View Menu" toggle); Book Now's pre-order section can
+// later reuse this and pass `renderItemExtra` to inject selection controls
+// (checkbox, quantity stepper, etc.) per item without duplicating the markup.
+const renderMenuSections = (menuItems, { renderItemExtra } = {}) => Object.entries(groupMenuItemsByCategory(menuItems))
+  .map(([category, items]) => `
+    <div class="menu-category">
+      <p class="menu-category-title text-label-caps">${category}</p>
+      <ul class="menu-list">
+        ${items.map((item) => `
+          <li class="menu-item">
+            <span class="menu-item-name">${item.name}</span>
+            ${renderItemExtra ? renderItemExtra(item) : ''}
+            <span class="menu-item-price">$${item.price}</span>
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+  `).join('');
+
 // Closes any open element matching `selector` (a <details>) when a click lands
 // outside it. Returns the matched elements so callers can reuse the NodeList.
 const closeOnOutsideClick = (selector) => {
@@ -36,14 +61,16 @@ const closeOnOutsideClick = (selector) => {
    Internally split into independent sub-modules, one per concern:
    Signup (the sign-up form), Nav (top nav chrome), Filters (Explore's
    filter chips), Router (screen visibility/navigation), Explore
-   (restaurant card rendering). Each wires itself up in its own init().
+   (restaurant card rendering), RestaurantView (the overlay a card opens).
+   Each wires itself up in its own init().
    ========================================================= */
 const UI = {
   init() {
     this.Signup.init();
     this.Nav.init();
     this.Filters.init();
-    this.Explore.render();
+    this.Explore.init();
+    this.RestaurantView.init();
     this.Router.routeInitial();
   },
 
@@ -221,6 +248,11 @@ const UI = {
 
   /* ----- Explore screen's restaurant grid ----- */
   Explore: {
+    init() {
+      this.render();
+      this.bindCardOpen();
+    },
+
     render() {
       const grid = document.getElementById('restaurant-grid');
       if (!grid) return;
@@ -228,9 +260,30 @@ const UI = {
       grid.innerHTML = Restaurants.list().map((restaurant) => this.renderCard(restaurant)).join('');
     },
 
+    // Event-delegated so it keeps working after render() replaces the grid's innerHTML.
+    bindCardOpen() {
+      const grid = document.getElementById('restaurant-grid');
+      if (!grid) return;
+
+      const openCardFromEvent = (event) => {
+        const card = event.target.closest('[data-restaurant-id]');
+        if (!card) return;
+
+        const restaurant = Restaurants.get(card.dataset.restaurantId);
+        if (restaurant) UI.RestaurantView.open(restaurant);
+      };
+
+      grid.addEventListener('click', openCardFromEvent);
+      grid.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        openCardFromEvent(event);
+      });
+    },
+
     renderCard(restaurant) {
       return `
-        <article class="card">
+        <article class="card" data-restaurant-id="${restaurant.id}" tabindex="0" role="button" aria-label="View ${restaurant.title}">
           <img class="card-image" src="${restaurant.photoUrl}" alt="${restaurant.title}" />
           <div class="card-body">
             <h3 class="card-title">${restaurant.title}</h3>
@@ -251,6 +304,45 @@ const UI = {
           </div>
         </article>
       `;
+    },
+  },
+
+  /* ----- Restaurant View overlay (sits on top of Explore, doesn't replace it) ----- */
+  RestaurantView: {
+    init() {
+      this.overlay = document.getElementById('restaurant-view-overlay');
+      this.photo = document.getElementById('restaurant-view-photo');
+      this.title = document.getElementById('restaurant-view-title');
+      this.cuisine = document.getElementById('restaurant-view-cuisine');
+      this.hours = document.getElementById('restaurant-view-hours');
+      this.rating = document.getElementById('restaurant-view-rating');
+      this.badges = document.getElementById('restaurant-view-badges');
+      this.menu = document.getElementById('restaurant-view-menu');
+
+      document.getElementById('restaurant-view-close')?.addEventListener('click', () => this.close());
+    },
+
+    open(restaurant) {
+      this.photo.src = restaurant.photoUrl;
+      this.photo.alt = restaurant.title;
+      this.title.textContent = restaurant.title;
+      this.cuisine.textContent = restaurant.cuisine;
+      this.hours.textContent = restaurant.hours;
+      this.rating.textContent = `★ ${restaurant.rating}`;
+      this.badges.innerHTML = renderBadges(restaurant.sustainabilityBadges)
+        + renderBadges(restaurant.allergenBadges, 'chip-allergen');
+      this.menu.innerHTML = renderMenuSections(restaurant.menuItems);
+
+      // Explore stays mounted/unhidden underneath — no screen swap, so its
+      // scroll position is preserved for free; nothing to save or restore.
+      // (Deliberately not locking body scroll here: toggling overflow removes
+      // the scrollbar and reflows the page, which drifts the scroll position
+      // by the scrollbar's width — exactly what this needs to avoid.)
+      this.overlay.hidden = false;
+    },
+
+    close() {
+      this.overlay.hidden = true;
     },
   },
 };
