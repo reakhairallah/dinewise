@@ -116,33 +116,41 @@
           </fieldset>
 
           <fieldset class="form-fieldset">
-            <legend class="text-headline-sm">Dietary Tags</legend>
+            <legend class="text-headline-sm">Dietary Preferences</legend>
             <p class="text-body-md field-hint">Optional — helps us tailor recommendations.</p>
 
             <div class="chip-group">
               <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="dietaryTags" value="vegetarian" />
+                <input class="chip-input" type="checkbox" name="dietaryPreferences" value="vegetarian" />
                 <span class="chip">Vegetarian</span>
               </label>
               <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="dietaryTags" value="vegan" />
+                <input class="chip-input" type="checkbox" name="dietaryPreferences" value="vegan" />
                 <span class="chip">Vegan</span>
               </label>
               <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="dietaryTags" value="gluten-free" />
-                <span class="chip">Gluten-Free</span>
-              </label>
-              <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="dietaryTags" value="nut-allergy" />
-                <span class="chip">Nut Allergy</span>
-              </label>
-              <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="dietaryTags" value="halal" />
+                <input class="chip-input" type="checkbox" name="dietaryPreferences" value="halal" />
                 <span class="chip">Halal</span>
               </label>
               <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="dietaryTags" value="kosher" />
+                <input class="chip-input" type="checkbox" name="dietaryPreferences" value="kosher" />
                 <span class="chip">Kosher</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="form-fieldset">
+            <legend class="text-headline-sm">Allergies &amp; Intolerances</legend>
+            <p class="text-body-md field-hint">Optional — helps us tailor recommendations.</p>
+
+            <div class="chip-group">
+              <label class="chip-option">
+                <input class="chip-input" type="checkbox" name="allergyTags" value="nut-allergy" />
+                <span class="chip">Nut Allergy</span>
+              </label>
+              <label class="chip-option">
+                <input class="chip-input" type="checkbox" name="allergyTags" value="gluten-free" />
+                <span class="chip">Gluten-Free</span>
               </label>
             </div>
           </fieldset>
@@ -205,83 +213,12 @@
 
       <div class="filter-row">
 
-        <details class="filter-chip">
-          <summary class="chip filter-chip-summary">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
-              <path d="M4 5h16l-6 7v6l-4 2v-8z" stroke-linejoin="round" stroke-linecap="round" />
-            </svg>
-            Filters
-          </summary>
-
-          <div class="filter-chip-panel">
-            <div class="form-fieldset">
-              <p class="field-label">Cuisine</p>
-              <div class="chip-group">
-                <label class="chip-option">
-                  <input class="chip-input" type="checkbox" name="exploreCuisine" value="italian" />
-                  <span class="chip">Italian</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="checkbox" name="exploreCuisine" value="japanese" />
-                  <span class="chip">Japanese</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="checkbox" name="exploreCuisine" value="french" />
-                  <span class="chip">French</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="checkbox" name="exploreCuisine" value="steakhouse" />
-                  <span class="chip">Steakhouse</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="checkbox" name="exploreCuisine" value="mediterranean" />
-                  <span class="chip">Mediterranean</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="checkbox" name="exploreCuisine" value="seafood" />
-                  <span class="chip">Seafood</span>
-                </label>
-              </div>
-            </div>
-
-            <div class="form-fieldset">
-              <p class="field-label">Dietary</p>
-              <div class="chip-group">
-                <label class="chip-option">
-                  <input class="chip-input" type="checkbox" name="exploreDietary" value="vegetarian" />
-                  <span class="chip">Vegetarian</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="checkbox" name="exploreDietary" value="vegan" />
-                  <span class="chip">Vegan</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="checkbox" name="exploreDietary" value="gluten-free" />
-                  <span class="chip">Gluten-Free</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="checkbox" name="exploreDietary" value="nut-allergy" />
-                  <span class="chip">Nut Allergy</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="checkbox" name="exploreDietary" value="halal" />
-                  <span class="chip">Halal</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="checkbox" name="exploreDietary" value="kosher" />
-                  <span class="chip">Kosher</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        </details>
-
-        <button type="button" id="preferences-chip" class="chip filter-chip-summary filter-chip-ai">
+        <button type="button" id="smart-pick-action" class="btn btn-primary filter-action-ai">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">
             <path d="M12 3c.45 2.55 1.15 4.15 2.1 5.1.95.95 2.55 1.65 5.1 2.1-2.55.45-4.15 1.15-5.1 2.1-.95.95-1.65 2.55-2.1 5.1-.45-2.55-1.15-4.15-2.1-5.1C8.95 11.35 7.35 10.65 4.8 10.2c2.55-.45 4.15-1.15 5.1-2.1C10.85 7.15 11.55 5.55 12 3Z" />
             <path d="M18.5 14.5c.25 1.15.6 1.9 1.05 2.35.45.45 1.2.8 2.35 1.05-1.15.25-1.9.6-2.35 1.05-.45.45-.8 1.2-1.05 2.35-.25-1.15-.6-1.9-1.05-2.35-.45-.45-1.2-.8-2.35-1.05 1.15-.25 1.9-.6 2.35-1.05.45-.45.8-1.2 1.05-2.35Z" />
           </svg>
-          Based on your preferences
+          Find my pick, wisely
         </button>
 
         <details class="filter-chip filter-chip-ai">
@@ -353,6 +290,10 @@
         </details>
 
       </div>
+
+      <p id="smart-pick-message" class="text-body-md field-error" hidden>
+        Add at least one favorite cuisine, dietary preference, or allergy to your profile to get a recommendation.
+      </p>
 
       <div id="restaurant-grid" class="restaurant-grid"></div>
 

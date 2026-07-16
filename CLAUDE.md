@@ -78,14 +78,18 @@ session.
 ## Data model (conceptual — implement exact shape as needed)
 
 - **Guest profile** — one per browser, created once: name, email, phone, favoriteCuisines[],
-  dietaryTags[]. Membership is not yet decided (see Deferred) — don't add
-  an `isMember` field until that's settled.
+  dietaryPreferences[] (e.g. Vegetarian, Vegan, Halal, Kosher), allergyTags[] (e.g. Nut Allergy,
+  Gluten-Free) — mirrors the restaurant's dietaryBadges[]/allergenCautions[] split one-to-one.
+  Membership is not yet decided (see Deferred) — don't add an `isMember` field until that's
+  settled.
 - **Session role** — `'customer' | 'admin'`. Separate from the profile. Stored in `localStorage`
   (survives refresh); cleared only by the explicit Log Out control, never auto-cleared. Profile
   itself is never cleared or duplicated by logout.
 - **Restaurant** — photoUrl (hosted image link — see Assumed defaults), title, cuisine, hours,
   rating, distanceMiles (static, randomized once at creation), sustainabilityBadges[],
-  allergenBadges[], tableLayout, peak/off-peak base pricing, menuItems[].
+  allergenCautions[] (kitchen-level warning phrasing, e.g. `'Nuts'` not `'Contains Nuts'` —
+  not a per-dish claim), dietaryBadges[] (e.g. `'Vegetarian-Friendly'`, `'Vegan-Friendly'`,
+  separate from allergen cautions), tableLayout, peak/off-peak base pricing, menuItems[].
 - **Table** — id, capacity, lock status per date+time slot. Availability is randomized **once**
   at restaurant-creation time and persisted — never re-randomize on load/render.
 - **Reservation** — guestId, restaurantId, tableId, dateTime, partySize, invitees[]

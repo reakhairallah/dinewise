@@ -63,9 +63,8 @@ button.filter-chip-summary:disabled {
   padding: var(--space-3);
 }
 
-/* AI-flavored filters (Based on your preferences / Smart Match) — gradient
-   glow + a pulsing sparkle badge distinguish them from the plain Filters chip. */
-button.filter-chip-ai.is-active,
+/* AI-flavored Smart Match filter chip — gradient glow + a pulsing sparkle
+   badge distinguish it from the plain Filters chip. */
 .filter-chip-ai[open] > .filter-chip-summary {
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
   border-color: var(--color-primary);
@@ -73,8 +72,28 @@ button.filter-chip-ai.is-active,
   box-shadow: 0 0 0 1px rgb(233 193 118 / 40%), 0 0 18px rgb(233 193 118 / 35%);
 }
 
-button.filter-chip-ai.is-active::after,
 .filter-chip-ai[open] > .filter-chip-summary::after {
+  content: '✦';
+  position: absolute;
+  top: -7px;
+  right: -6px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--color-primary-fixed);
+  animation: sparkle-pulse 1.6s ease-in-out infinite;
+}
+
+/* Smart-pick action button — same AI gradient treatment as Smart Match, but
+   always-on since it's a one-shot action, not a togglable filter. */
+.filter-action-ai {
+  position: relative;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: 0 0 0 1px rgb(233 193 118 / 40%), 0 0 18px rgb(233 193 118 / 35%);
+}
+
+.filter-action-ai::after {
   content: '✦';
   position: absolute;
   top: -7px;
@@ -124,6 +143,31 @@ button.filter-chip-ai.is-active::after,
   margin-top: var(--space-1);
 }
 
+/* Top-ranked card after "Find my pick, wisely" — gold outline/glow plus a
+   ribbon so the suggestion reads as a clear, single recommendation. */
+.card.is-recommended {
+  position: relative;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-card), 0 0 24px rgb(233 193 118 / 30%);
+}
+
+.card-recommended-badge {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 1;
+  padding: 4px var(--space-2);
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  color: var(--color-on-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-label-caps-size);
+  font-weight: var(--text-label-caps-weight);
+  letter-spacing: var(--text-label-caps-tracking);
+  text-transform: uppercase;
+}
+
 .card-rating {
   color: var(--color-primary);
 }
@@ -139,4 +183,10 @@ button.filter-chip-ai.is-active::after,
   background-color: transparent;
   border-color: var(--color-error);
   color: var(--color-error);
+}
+
+.chip-dietary {
+  background-color: transparent;
+  border-color: var(--color-tertiary);
+  color: var(--color-tertiary);
 }
