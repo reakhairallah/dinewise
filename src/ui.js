@@ -67,15 +67,16 @@ const countTagOverlap = (guestTags = [], restaurantTags = []) => {
 
 const CUISINE_MATCH_SCORE = 2;
 const DIETARY_MATCH_SCORE = 1;
-const ALLERGY_CAUTION_PENALTY = 1;
 
 const hasProfileSignal = (guest) => Boolean(
   guest?.favoriteCuisines?.length || guest?.dietaryPreferences?.length || guest?.allergyTags?.length,
 );
 
+const hasAllergyConflict = (restaurant, guest) => countTagOverlap(guest.allergyTags, restaurant.allergenCautions) > 0;
+
 // Higher score = better match. Favorite cuisine matching is worth more than a
-// dietary-preference match; an allergy caution overlap pulls the score down
-// rather than excluding the restaurant, since we're sorting, not filtering.
+// dietary-preference match. Allergy cautions are handled separately in
+// compareByRecommendation, not folded into this score.
 const matchScore = (restaurant, guest) => {
   let score = 0;
 
@@ -84,10 +85,31 @@ const matchScore = (restaurant, guest) => {
   }
 
   score += countTagOverlap(guest.dietaryPreferences, restaurant.dietaryBadges) * DIETARY_MATCH_SCORE;
-  score -= countTagOverlap(guest.allergyTags, restaurant.allergenCautions) * ALLERGY_CAUTION_PENALTY;
 
   return score;
 };
+
+// Allergy-conflict status is the primary sort key — a conflict-free restaurant
+// always outranks a conflicting one, no matter the score. Only when both
+// restaurants share the same conflict status does match score break the tie.
+const compareByRecommendation = (a, b, guest) => {
+  const aConflict = hasAllergyConflict(a, guest);
+  const bConflict = hasAllergyConflict(b, guest);
+  if (aConflict !== bConflict) return aConflict ? 1 : -1;
+
+  return matchScore(b, guest) - matchScore(a, guest);
+};
+
+// Local (not UTC) 'YYYY-MM-DD', matching what a <input type="date"> reads/writes.
+const toDateInputValue = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+// A table is bookable for a given slot if it can seat the party and isn't
+// already locked for that exact dateTime — table availability itself was
+// randomized once at seed time (see seed-data.js), this just reads it.
+const isTableAvailable = (table, partySize, dateTime) => table.capacity >= partySize && !table.locks[dateTime];
+
+const getAvailableTables = (restaurant, partySize, dateTime) => restaurant.tableLayout
+  .filter((table) => isTableAvailable(table, partySize, dateTime));
 
 // Closes any open element matching `selector` (a <details>) when a click lands
 // outside it. Returns the matched elements so callers can reuse the NodeList.
@@ -102,11 +124,40 @@ const closeOnOutsideClick = (selector) => {
 };
 
 /* =========================================================
+   Guest profile persistence — the one save path for the whole app. Signup
+   (initial creation + full edit), Explore's quick-add panel, and Dashboard's
+   later Edit Profile all funnel through Guest.save() so a partial update
+   (e.g. just tags) never clobbers fields it didn't touch.
+   ========================================================= */
+const Guest = {
+  get() {
+    return Storage.get('dinewise_guest_v1');
+  },
+
+  save(updates) {
+    const existing = this.get();
+    const guest = {
+      id: existing?.id ?? crypto.randomUUID(),
+      name: existing?.name ?? '',
+      email: existing?.email ?? '',
+      phone: existing?.phone ?? '',
+      favoriteCuisines: existing?.favoriteCuisines ?? [],
+      dietaryPreferences: existing?.dietaryPreferences ?? [],
+      allergyTags: existing?.allergyTags ?? [],
+      ...updates,
+    };
+    Storage.set('dinewise_guest_v1', guest);
+    return guest;
+  },
+};
+
+/* =========================================================
    UI — one namespace object per CLAUDE.md's file convention.
    Internally split into independent sub-modules, one per concern:
    Signup (the sign-up form), Nav (top nav chrome), Filters (Explore's
    filter chips), Router (screen visibility/navigation), Explore
-   (restaurant card rendering), RestaurantView (the overlay a card opens).
+   (restaurant card rendering), RestaurantView (the overlay a card opens),
+   BookNow (the screen Restaurant View's Book Now button leads to).
    Each wires itself up in its own init().
    ========================================================= */
 const UI = {
@@ -116,6 +167,7 @@ const UI = {
     this.Filters.init();
     this.Explore.init();
     this.RestaurantView.init();
+    this.BookNow.init();
     this.Router.routeInitial();
   },
 
@@ -153,7 +205,7 @@ const UI = {
     },
 
     prefill() {
-      const guest = Storage.get('dinewise_guest_v1');
+      const guest = Guest.get();
       if (!guest) return;
 
       this.fields.name.value = guest.name ?? '';
@@ -174,40 +226,32 @@ const UI = {
       return role;
     },
 
-    buildGuestFromForm() {
-      const existingGuest = Storage.get('dinewise_guest_v1');
-      return {
-        id: existingGuest?.id ?? crypto.randomUUID(),
-        name: this.fields.name.value.trim(),
-        email: this.fields.email.value.trim(),
-        phone: this.fields.phone.value.trim(),
-        favoriteCuisines: getCheckedValues(this.form, 'favoriteCuisines'),
-        dietaryPreferences: getCheckedValues(this.form, 'dietaryPreferences'),
-        allergyTags: getCheckedValues(this.form, 'allergyTags'),
-      };
-    },
-
-    persist(guest, role) {
-      Storage.set('dinewise_guest_v1', guest);
-      Storage.set('dinewise_session_v1', { role });
-    },
-
     handleSubmit(event) {
       event.preventDefault();
 
       const role = this.validateRole();
       if (!role) return;
 
-      const guest = this.buildGuestFromForm();
-      this.persist(guest, role);
+      Guest.save({
+        name: this.fields.name.value.trim(),
+        email: this.fields.email.value.trim(),
+        phone: this.fields.phone.value.trim(),
+        favoriteCuisines: getCheckedValues(this.form, 'favoriteCuisines'),
+        dietaryPreferences: getCheckedValues(this.form, 'dietaryPreferences'),
+        allergyTags: getCheckedValues(this.form, 'allergyTags'),
+      });
+      Storage.set('dinewise_session_v1', { role });
 
       UI.Nav.renderProfile();
       UI.Router.goToRole(role);
     },
 
     // Blanks the role picker and hides guest-only fields; profile fields are
-    // left as-is since Log Out never clears/duplicates the underlying profile.
+    // never cleared/duplicated by Log Out, but re-pulled from storage here —
+    // prefill() only ran once at page load, so anything saved since then
+    // (e.g. Explore's quick-add panel) hasn't reached this form's DOM yet.
     reset() {
+      this.prefill();
       this.form.querySelectorAll('input[name="role"]').forEach((input) => { input.checked = false; });
       this.updateGuestFieldsVisibility();
       this.roleError.hidden = true;
@@ -226,7 +270,7 @@ const UI = {
     renderProfile() {
       if (!this.avatarInitials) return;
 
-      const name = Storage.get('dinewise_guest_v1')?.name?.trim();
+      const name = Guest.get()?.name?.trim();
       const initials = name
         ? name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0].toUpperCase()).join('')
         : 'G';
@@ -266,16 +310,17 @@ const UI = {
 
     goToRole(role) {
       if (role === 'customer') {
+        UI.Explore.reset();
         this.showScreen('screen-explore');
         return;
       }
 
       // Admin Dashboard doesn't exist yet — this is the hook it will replace.
-      console.log(`Signed in as ${role}.`, Storage.get('dinewise_guest_v1'));
+      console.log(`Signed in as ${role}.`, Guest.get());
     },
 
     routeInitial() {
-      const guest = Storage.get('dinewise_guest_v1');
+      const guest = Guest.get();
       const session = Storage.get('dinewise_session_v1');
       if (!guest || !session?.role) return;
 
@@ -293,12 +338,18 @@ const UI = {
   /* ----- Explore screen's restaurant grid ----- */
   Explore: {
     init() {
-      this.message = document.getElementById('smart-pick-message');
+      this.quickAddChip = document.getElementById('smart-pick-chip');
+      this.quickAddPanel = document.getElementById('smart-pick-quickadd');
       this.recommendedId = null;
 
       this.render();
       this.bindCardOpen();
-      document.getElementById('smart-pick-action')?.addEventListener('click', () => this.recommend());
+
+      // #smart-pick-chip is a plain .filter-chip <details>, so Filters.init()
+      // already gives it the same open/close-on-outside-click/mutual-exclusion
+      // behavior as the Smart Match chip — nothing extra to wire up for that.
+      document.getElementById('smart-pick-action')?.addEventListener('click', (event) => this.handleActionClick(event));
+      document.getElementById('smart-pick-quickadd-submit')?.addEventListener('click', () => this.handleQuickAddSubmit());
     },
 
     render(restaurants = Restaurants.list()) {
@@ -308,24 +359,50 @@ const UI = {
       grid.innerHTML = restaurants.map((restaurant) => this.renderCard(restaurant)).join('');
     },
 
-    // Sorts (never hides) the list by match score against the guest's profile.
-    // If the guest hasn't set any favorite cuisines, dietary preferences, or
-    // allergy tags, there's nothing to score against — prompt instead of
-    // sorting on nothing.
-    recommend() {
-      const guest = Storage.get('dinewise_guest_v1');
+    // "Find my pick, wisely" is a per-visit action, not persisted state — a
+    // fresh arrival at Explore (login, or switching back from Admin) should
+    // always start from the unsorted list, not whatever was last ranked.
+    reset() {
+      this.recommendedId = null;
+      this.quickAddChip?.removeAttribute('open');
+      this.render();
+    },
 
-      if (!hasProfileSignal(guest)) {
-        this.message.hidden = false;
-        this.message.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
+    // The summary's native click behavior toggles the <details> panel open —
+    // exactly what we want when there's nothing saved yet to sort by. But if
+    // the guest already has profile signal, there's no reason to show the
+    // quick-add panel at all: block the native toggle and just sort.
+    handleActionClick(event) {
+      const guest = Guest.get();
+      if (!hasProfileSignal(guest)) return;
 
-      this.message.hidden = true;
+      event.preventDefault();
+      this.quickAddChip.removeAttribute('open');
+      this.rank(guest);
+    },
 
-      const ranked = [...Restaurants.list()].sort((a, b) => matchScore(b, guest) - matchScore(a, guest));
+    rank(guest) {
+      const ranked = [...Restaurants.list()].sort((a, b) => compareByRecommendation(a, b, guest));
       this.recommendedId = ranked[0]?.id ?? null;
       this.render(ranked);
+    },
+
+    // Same tags-only shape Guest.save() expects elsewhere (Signup, and later
+    // Dashboard's Edit Profile) — just scoped to this panel's own inputs.
+    // Requires at least one tag to do anything; with none set, this is a
+    // no-op — dismissing without saving is just the <details> toggle/outside
+    // click, handled natively, never by this method.
+    handleQuickAddSubmit() {
+      const tags = {
+        favoriteCuisines: getCheckedValues(this.quickAddPanel, 'favoriteCuisines'),
+        dietaryPreferences: getCheckedValues(this.quickAddPanel, 'dietaryPreferences'),
+        allergyTags: getCheckedValues(this.quickAddPanel, 'allergyTags'),
+      };
+      if (!tags.favoriteCuisines.length && !tags.dietaryPreferences.length && !tags.allergyTags.length) return;
+
+      const guest = Guest.save(tags);
+      this.quickAddChip.removeAttribute('open');
+      this.rank(guest);
     },
 
     // Event-delegated so it keeps working after render() replaces the grid's innerHTML.
@@ -361,7 +438,7 @@ const UI = {
             <p class="text-body-md card-meta">
               <span>${restaurant.cuisine}</span>
               <span aria-hidden="true">·</span>
-              <span>${restaurant.hours}</span>
+              <span>${Restaurants.formatHours(restaurant)}</span>
             </p>
             <p class="text-body-md card-meta">
               <span class="card-rating">★ ${restaurant.rating}</span>
@@ -392,14 +469,21 @@ const UI = {
       this.menu = document.getElementById('restaurant-view-menu');
 
       document.getElementById('restaurant-view-close')?.addEventListener('click', () => this.close());
+      document.getElementById('restaurant-view-book')?.addEventListener('click', () => {
+        if (!this.currentRestaurant) return;
+        this.close();
+        UI.BookNow.open(this.currentRestaurant);
+      });
     },
 
     open(restaurant) {
+      this.currentRestaurant = restaurant;
+
       this.photo.src = restaurant.photoUrl;
       this.photo.alt = restaurant.title;
       this.title.textContent = restaurant.title;
       this.cuisine.textContent = restaurant.cuisine;
-      this.hours.textContent = restaurant.hours;
+      this.hours.textContent = Restaurants.formatHours(restaurant);
       this.rating.textContent = `★ ${restaurant.rating}`;
       this.badges.innerHTML = renderBadges(restaurant.sustainabilityBadges)
         + renderBadges(restaurant.dietaryBadges, 'chip-dietary')
@@ -416,6 +500,112 @@ const UI = {
 
     close() {
       this.overlay.hidden = true;
+    },
+  },
+
+  /* ----- Book Now screen (reached from Restaurant View's Book Now button,
+     not an overlay). Only Table & Time has real logic so far — every other
+     section below is still a layout placeholder. ----- */
+  BookNow: {
+    init() {
+      this.photo = document.getElementById('book-now-photo');
+      this.title = document.getElementById('book-now-title');
+      this.partySizeInput = document.getElementById('book-now-party-size');
+      this.dateInput = document.getElementById('book-now-date');
+      this.timeInput = document.getElementById('book-now-time');
+      this.tableList = document.getElementById('book-now-tables');
+
+      document.getElementById('book-now-back')?.addEventListener('click', () => UI.Router.showScreen('screen-explore'));
+
+      [this.partySizeInput, this.dateInput, this.timeInput].forEach((input) => {
+        input.addEventListener('input', () => this.renderAvailableTables());
+      });
+
+      // Event-delegated so it keeps working after renderAvailableTables()
+      // replaces the list's innerHTML.
+      this.tableList.addEventListener('click', (event) => {
+        const option = event.target.closest('[data-table-id]');
+        if (option) this.selectTable(option.dataset.tableId);
+      });
+    },
+
+    open(restaurant) {
+      this.restaurant = restaurant;
+
+      this.photo.src = restaurant.photoUrl;
+      this.photo.alt = restaurant.title;
+      this.title.textContent = restaurant.title;
+
+      this.partySizeInput.value = 2;
+      this.dateInput.value = '';
+      this.dateInput.min = toDateInputValue(new Date());
+      this.timeInput.value = '';
+      this.timeInput.min = restaurant.openTime;
+      this.timeInput.max = restaurant.closeTime;
+      this.renderAvailableTables();
+
+      UI.Router.showScreen('screen-book-now');
+    },
+
+    // 'YYYY-MM-DD' + 'HH:MM' joined with 'T' — the exact shape a table's
+    // locks object keys its slots by (see seed-data.js's SEED_SLOT_POOL).
+    getSelectedDateTime() {
+      if (!this.dateInput.value || !this.timeInput.value) return null;
+      return `${this.dateInput.value}T${this.timeInput.value}`;
+    },
+
+    renderAvailableTables() {
+      const partySize = Number(this.partySizeInput.value);
+      const dateTime = this.getSelectedDateTime();
+
+      if (!partySize || !dateTime) {
+        this.tableList.innerHTML = '<p class="text-body-md book-now-placeholder">Enter a party size, date, and time to see available tables.</p>';
+        return;
+      }
+
+      // min/max on the inputs steer the native picker, but typed input can
+      // still slip through — re-check here so a bad value never reaches
+      // getAvailableTables.
+      if (this.dateInput.value < this.dateInput.min) {
+        this.tableList.innerHTML = '<p class="text-body-md book-now-placeholder">Pick a date that hasn\'t already passed.</p>';
+        return;
+      }
+
+      if (this.timeInput.value < this.restaurant.openTime || this.timeInput.value > this.restaurant.closeTime) {
+        this.tableList.innerHTML = `<p class="text-body-md book-now-placeholder">${this.restaurant.title} is open ${Restaurants.formatHours(this.restaurant)}.</p>`;
+        return;
+      }
+
+      const available = getAvailableTables(this.restaurant, partySize, dateTime);
+
+      if (!available.length) {
+        this.tableList.innerHTML = '<p class="text-body-md book-now-placeholder">No tables available for that party size and time.</p>';
+        return;
+      }
+
+      this.tableList.innerHTML = available.map((table) => `
+        <button type="button" class="btn btn-secondary book-now-table-option" data-table-id="${table.id}">
+          Table ${table.id.slice(0, 8)} — Seats ${table.capacity}
+        </button>
+      `).join('');
+    },
+
+    // The function a future visual table map will call when a table is
+    // clicked. The lock is written to the restaurant's own tableLayout (via
+    // Restaurants.set), not just kept on this screen — per CLAUDE.md, that's
+    // what stops the same table/slot from being double-booked, since the
+    // dataset is shared across every guest browsing the same restaurant.
+    selectTable(tableId) {
+      const dateTime = this.getSelectedDateTime();
+      if (!dateTime) return;
+
+      const table = this.restaurant.tableLayout.find((candidate) => candidate.id === tableId);
+      if (!table) return;
+
+      table.locks[dateTime] = true;
+      Restaurants.set(this.restaurant);
+
+      this.renderAvailableTables();
     },
   },
 };

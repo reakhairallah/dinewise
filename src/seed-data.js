@@ -1,12 +1,18 @@
-// Fixed pool of near-term dinner slots used to pre-lock a random subset of
-// tables at seed time. This only ever runs once (see Restaurants.seed),
-// after which the resulting lock state is persisted and never regenerated.
-const SEED_SLOT_POOL = [
-  '2026-07-12T18:00', '2026-07-12T19:00', '2026-07-12T20:00',
-  '2026-07-13T18:00', '2026-07-13T19:00', '2026-07-13T20:00',
-  '2026-07-14T18:00', '2026-07-14T19:00', '2026-07-14T20:00',
-  '2026-07-15T18:00', '2026-07-15T19:00', '2026-07-15T20:00',
-];
+// Near-term dinner slots used to pre-lock a random subset of tables at seed
+// time, built relative to whenever the app actually runs (1-4 days out) so
+// they read as plausible "already booked" slots instead of a fixed past
+// date. This only ever runs once (see Restaurants.seed), after which the
+// resulting lock state is persisted and never regenerated.
+const pad2 = (n) => String(n).padStart(2, '0');
+
+const dateTimeSlot = (daysFromNow, hour) => {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromNow);
+  const isoDate = `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+  return `${isoDate}T${pad2(hour)}:00`;
+};
+
+const SEED_SLOT_POOL = [1, 2, 3, 4].flatMap((daysFromNow) => [18, 19, 20].map((hour) => dateTimeSlot(daysFromNow, hour)));
 
 const createTable = (capacity) => {
   const locks = {};
@@ -31,7 +37,8 @@ function buildSeedRestaurants() {
       photoUrl: 'https://picsum.photos/seed/ember-oak/900/600',
       title: 'Ember & Oak',
       cuisine: 'Steakhouse',
-      hours: '5:00 PM – 11:00 PM',
+      openTime: '17:00',
+      closeTime: '23:00',
       rating: 4.7,
       distanceMiles: randomDistance(0.4, 6),
       sustainabilityBadges: ['Locally Sourced', 'Zero Food Waste'],
@@ -55,7 +62,8 @@ function buildSeedRestaurants() {
       photoUrl: 'https://picsum.photos/seed/salt-tide/900/600',
       title: 'Salt & Tide',
       cuisine: 'Seafood',
-      hours: '4:30 PM – 10:30 PM',
+      openTime: '16:30',
+      closeTime: '22:30',
       rating: 4.5,
       distanceMiles: randomDistance(0.4, 6),
       sustainabilityBadges: ['Sustainable Seafood', 'Compostable Packaging'],
@@ -79,7 +87,8 @@ function buildSeedRestaurants() {
       photoUrl: 'https://picsum.photos/seed/lumen-table/900/600',
       title: 'Lumen Table',
       cuisine: 'French',
-      hours: '5:30 PM – 11:30 PM',
+      openTime: '17:30',
+      closeTime: '23:30',
       rating: 4.8,
       distanceMiles: randomDistance(0.4, 6),
       sustainabilityBadges: ['Farm-to-Table', 'Locally Sourced'],
@@ -103,7 +112,8 @@ function buildSeedRestaurants() {
       photoUrl: 'https://picsum.photos/seed/trattoria-rosa/900/600',
       title: 'Trattoria Rosa',
       cuisine: 'Italian',
-      hours: '12:00 PM – 10:00 PM',
+      openTime: '12:00',
+      closeTime: '22:00',
       rating: 4.3,
       distanceMiles: randomDistance(0.4, 6),
       sustainabilityBadges: ['Locally Sourced'],
@@ -127,7 +137,8 @@ function buildSeedRestaurants() {
       photoUrl: 'https://picsum.photos/seed/koan/900/600',
       title: 'Kōan',
       cuisine: 'Japanese',
-      hours: '6:00 PM – 9:30 PM',
+      openTime: '18:00',
+      closeTime: '21:30',
       rating: 4.9,
       distanceMiles: randomDistance(0.4, 6),
       sustainabilityBadges: ['Sustainable Seafood', 'Zero Food Waste'],
@@ -151,7 +162,8 @@ function buildSeedRestaurants() {
       photoUrl: 'https://picsum.photos/seed/verdant-table/900/600',
       title: 'Verdant Table',
       cuisine: 'Mediterranean',
-      hours: '11:00 AM – 9:00 PM',
+      openTime: '11:00',
+      closeTime: '21:00',
       rating: 4.4,
       distanceMiles: randomDistance(0.4, 6),
       sustainabilityBadges: ['Farm-to-Table', 'Zero Food Waste', 'Compostable Packaging'],
@@ -175,7 +187,8 @@ function buildSeedRestaurants() {
       photoUrl: 'https://picsum.photos/seed/saffron-house/900/600',
       title: 'Saffron House',
       cuisine: 'Indian',
-      hours: '5:00 PM – 10:30 PM',
+      openTime: '17:00',
+      closeTime: '22:30',
       rating: 4.2,
       distanceMiles: randomDistance(0.4, 6),
       sustainabilityBadges: ['Locally Sourced'],
@@ -199,7 +212,8 @@ function buildSeedRestaurants() {
       photoUrl: 'https://picsum.photos/seed/casa-marisol/900/600',
       title: 'Casa Marisol',
       cuisine: 'Mexican',
-      hours: '12:00 PM – 11:00 PM',
+      openTime: '12:00',
+      closeTime: '23:00',
       rating: 4.6,
       distanceMiles: randomDistance(0.4, 6),
       sustainabilityBadges: ['Locally Sourced', 'Compostable Packaging'],

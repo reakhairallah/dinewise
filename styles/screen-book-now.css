@@ -1,0 +1,81 @@
+/* =========================================================
+   Screen 5 — Book Now
+   ========================================================= */
+.book-now-title {
+  color: var(--color-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* .nav-links sits in .nav-inner's auto-sized center column; with 7 anchor
+   links (vs. Explore's single "The Table") it needs to be able to shrink and
+   scroll horizontally instead of blowing out the grid on narrow screens. */
+.book-now-nav-links {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.book-now-nav-links .nav-link {
+  flex-shrink: 0;
+}
+
+/* Small horizontal banner section right under the nav — replaces the old
+   header thumbnail per feedback that a picture didn't belong in the nav bar. */
+.book-now-banner-wrap {
+  padding-block: var(--space-3);
+}
+
+.book-now-banner {
+  width: 100%;
+  aspect-ratio: 21 / 6;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+}
+
+.book-now-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.book-now-section {
+  /* Offsets the anchor scroll target so a section's heading clears the
+     sticky header (title bar + section nav) instead of landing under it. */
+  scroll-margin-top: 80px;
+  padding-top: var(--space-2);
+  border-top: var(--border-ghost);
+}
+
+.book-now-section:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.book-now-placeholder {
+  color: var(--color-on-surface-variant);
+  margin-top: var(--space-1);
+}
+
+.book-now-field-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+@media (max-width: 600px) {
+  .book-now-field-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Plain stand-in for the real (separately built) visual table map — just
+   enough to click through and verify the availability/locking logic. */
+.book-now-table-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  align-items: flex-start;
+}
