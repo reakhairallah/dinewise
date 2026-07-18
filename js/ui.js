@@ -524,8 +524,13 @@ const UI = {
       this.inviteNameInput = document.getElementById('book-now-invite-name');
       this.inviteError = document.getElementById('book-now-invite-error');
       this.inviteList = document.getElementById('book-now-invite-list');
+      this.billSplitBreakdown = document.getElementById('book-now-bill-split-breakdown');
+      this.summaryContent = document.getElementById('book-now-summary-content');
+      this.confirmButton = document.getElementById('book-now-confirm');
+      this.confirmStatus = document.getElementById('book-now-confirm-status');
 
       document.getElementById('book-now-back')?.addEventListener('click', () => UI.Router.showScreen('screen-explore'));
+      this.confirmButton.addEventListener('click', () => this.confirmBooking());
 
       [this.partySizeInput, this.dateInput].forEach((input) => {
         input.addEventListener('input', () => {
@@ -592,6 +597,7 @@ const UI = {
     open(restaurant) {
       this.restaurant = restaurant;
       this.selectedTime = null;
+      this.selectedTableId = null;
 
       this.photo.src = restaurant.photoUrl;
       this.photo.alt = restaurant.title;
@@ -613,6 +619,10 @@ const UI = {
       this.inviteNameInput.value = '';
       this.inviteError.hidden = true;
       this.renderInvitees();
+
+      this.confirmStatus.hidden = true;
+      this.confirmStatus.innerHTML = '';
+      this.renderSummary();
 
       UI.Router.showScreen('screen-book-now');
     },
@@ -739,6 +749,7 @@ const UI = {
 
       table.locks[dateTime] = true;
       Restaurants.set(this.restaurant);
+      this.selectedTableId = tableId;
 
       this.renderTimeSlots();
       this.renderAvailableTables();
@@ -755,6 +766,8 @@ const UI = {
 
       if (!partySize || !dateTime) {
         this.pricingBreakdown.innerHTML = '<p class="text-body-md book-now-placeholder">Select a party size and date/time to see pricing.</p>';
+        this.renderBillSplit();
+        this.renderSummary();
         return;
       }
 
@@ -802,6 +815,9 @@ const UI = {
         ${preOrderSection}
         <p class="book-now-price-total"><span>Total</span><span>$${combinedTotal.toFixed(2)}</span></p>
       `;
+
+      this.renderBillSplit();
+      this.renderSummary();
     },
 
     // Reuses renderMenuSections (Restaurant View's read-only "View Menu"
@@ -836,13 +852,19 @@ const UI = {
         }));
     },
 
+    // Declined invitees don't count against the cap — they've freed their
+    // slot, same as being removed outright.
+    getActiveInviteeCount() {
+      return this.invitees.filter((invitee) => invitee.rsvpStatus !== 'declined').length;
+    },
+
     // this.invitees is already exactly the invitees[] shape CLAUDE.md's
     // reservation data model calls for — {name, rsvpStatus} — so Bill Split
     // can later do this.invitees.filter(i => i.rsvpStatus === 'accepted')
     // directly, no transforming first.
     renderInvitees() {
       const partySize = Number(this.partySizeInput.value) || 0;
-      this.inviteSummary.textContent = `Party of ${partySize} · ${this.invitees.length} invited`;
+      this.inviteSummary.textContent = `Party of ${partySize} · ${this.getActiveInviteeCount()} invited`;
 
       this.inviteList.innerHTML = this.invitees.map((invitee, index) => `
         <li class="book-now-invite-item">
@@ -853,10 +875,69 @@ const UI = {
           <button type="button" class="book-now-invite-remove" data-action="remove" data-invitee-index="${index}" aria-label="Remove ${invitee.name}">×</button>
         </li>
       `).join('');
+
+      this.renderBillSplit();
+      this.renderSummary();
     },
 
-    // Blocks blank names and duplicates (case-insensitive, trimmed) — every
-    // new entry starts 'pending', never randomized.
+    getPreOrderTotal() {
+      return this.getPreOrderItems().reduce((sum, item) => sum + item.price * item.quantity, 0);
+    },
+
+    // Splits a total evenly across the host + accepted invitees. Shared by
+    // renderBillSplit() and renderSummary() so both show identical numbers,
+    // not two independently-computed splits. Host-only naturally falls out
+    // of the same division — total / 1 — no separate branch needed.
+    getBillSplitShares(combinedTotal) {
+      const guest = Guest.get();
+      const acceptedInvitees = this.invitees.filter((invitee) => invitee.rsvpStatus === 'accepted');
+      const share = combinedTotal / (1 + acceptedInvitees.length);
+
+      return [
+        { label: `${guest?.name?.trim() || 'You'} (Host)`, amount: share },
+        ...acceptedInvitees.map((invitee) => ({ label: invitee.name, amount: share })),
+      ];
+    },
+
+    // Splits the complete total (Pricing.calculate()'s finalTotal + pre-order
+    // — the same number Pricing shows as "Total"), not just finalTotal on
+    // its own.
+    renderBillSplit() {
+      const partySize = Number(this.partySizeInput.value);
+      const dateTime = this.getSelectedDateTime();
+
+      if (!partySize || !dateTime) {
+        this.billSplitBreakdown.innerHTML = '<p class="text-body-md book-now-placeholder">Select a party size and date/time to see the bill split.</p>';
+        return;
+      }
+
+      const guest = Guest.get();
+      const isMember = Boolean(guest && Pricing.qualifiesForMembership(guest.id));
+
+      const { finalTotal } = Pricing.calculate({
+        restaurant: this.restaurant,
+        partySize,
+        dateTime,
+        couponCode: this.couponInput.value,
+        isMember,
+      });
+
+      const combinedTotal = finalTotal + this.getPreOrderTotal();
+      const shares = this.getBillSplitShares(combinedTotal);
+
+      this.billSplitBreakdown.innerHTML = `
+        <ul class="book-now-price-rows">
+          ${shares.map((share) => `<li><span>${share.label}</span><span>$${share.amount.toFixed(2)}</span></li>`).join('')}
+        </ul>
+      `;
+    },
+
+    // Blocks blank names, duplicates (case-insensitive, trimmed), and
+    // anything past the party-size cap — the host already occupies one seat,
+    // so pending/accepted invitees are capped at partySize - 1, not
+    // partySize. Declined invitees don't count against it, so a decline or
+    // removal immediately frees a slot. Every new entry starts 'pending',
+    // never randomized.
     addInvitee() {
       const name = this.inviteNameInput.value.trim();
       this.inviteError.hidden = true;
@@ -870,6 +951,13 @@ const UI = {
       const isDuplicate = this.invitees.some((invitee) => invitee.name.toLowerCase() === name.toLowerCase());
       if (isDuplicate) {
         this.inviteError.textContent = `${name} is already invited.`;
+        this.inviteError.hidden = false;
+        return;
+      }
+
+      const partySize = Number(this.partySizeInput.value) || 0;
+      if (this.getActiveInviteeCount() >= partySize - 1) {
+        this.inviteError.textContent = 'Table is full — remove or wait for a decline to invite someone else.';
         this.inviteError.hidden = false;
         return;
       }
@@ -893,6 +981,137 @@ const UI = {
       const cycle = ['pending', 'accepted', 'declined'];
       invitee.rsvpStatus = cycle[(cycle.indexOf(invitee.rsvpStatus) + 1) % cycle.length];
       this.renderInvitees();
+    },
+
+    // Read-only recap of everything selected elsewhere on this screen.
+    // Confirm Booking stays disabled until party size, date/time, and a
+    // table are all in place — there's nothing valid to confirm before then.
+    renderSummary() {
+      const partySize = Number(this.partySizeInput.value);
+      const dateTime = this.getSelectedDateTime();
+      const table = this.selectedTableId
+        && this.restaurant.tableLayout.find((candidate) => candidate.id === this.selectedTableId);
+
+      if (!partySize || !dateTime || !table) {
+        this.summaryContent.innerHTML = '<p class="text-body-md book-now-placeholder">Complete party size, date/time, and a table above to see your booking summary.</p>';
+        this.confirmButton.disabled = true;
+        return;
+      }
+
+      this.confirmButton.disabled = false;
+
+      const guest = Guest.get();
+      const isMember = Boolean(guest && Pricing.qualifiesForMembership(guest.id));
+
+      const { basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount, finalTotal } = Pricing.calculate({
+        restaurant: this.restaurant,
+        partySize,
+        dateTime,
+        couponCode: this.couponInput.value,
+        isMember,
+      });
+
+      const preOrderItems = this.getPreOrderItems();
+      const preOrderTotal = this.getPreOrderTotal();
+      const combinedTotal = finalTotal + preOrderTotal;
+      const shares = this.getBillSplitShares(combinedTotal);
+
+      const dateLabel = new Date(dateTime).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+
+      const priceRows = [
+        `<li><span>Base price (${partySize} × $${this.restaurant.pricing.basePrice.toFixed(2)})</span><span>$${basePrice.toFixed(2)}</span></li>`,
+        `<li><span>${isPeak ? 'Peak' : 'Off-Peak'} adjustment</span><span>${peakAdjustment >= 0 ? '+' : '−'}$${Math.abs(peakAdjustment).toFixed(2)}</span></li>`,
+      ];
+      if (couponDiscount > 0) priceRows.push(`<li><span>Coupon discount</span><span>−$${couponDiscount.toFixed(2)}</span></li>`);
+      if (membershipDiscount > 0) priceRows.push(`<li><span>Membership discount</span><span>−$${membershipDiscount.toFixed(2)}</span></li>`);
+      if (preOrderTotal > 0) priceRows.push(`<li><span>Pre-order total</span><span>$${preOrderTotal.toFixed(2)}</span></li>`);
+
+      this.summaryContent.innerHTML = `
+        <div class="book-now-ticket">
+          <p class="book-now-ticket-restaurant">${this.restaurant.title}</p>
+          <p class="text-body-md book-now-ticket-meta">${dateLabel} · ${formatTime12h(this.selectedTime)}</p>
+          <p class="text-body-md book-now-ticket-meta">Party of ${partySize} · Table ${table.id.slice(0, 8)} (Seats ${table.capacity})</p>
+
+          <div class="book-now-ticket-block">
+            <p class="field-label">Pricing</p>
+            <ul class="book-now-price-rows">${priceRows.join('')}</ul>
+            <p class="book-now-price-total"><span>Total</span><span>$${combinedTotal.toFixed(2)}</span></p>
+          </div>
+
+          ${preOrderItems.length ? `
+            <div class="book-now-ticket-block">
+              <p class="field-label">Pre-order Items</p>
+              <ul class="book-now-price-rows">
+                ${preOrderItems.map((item) => `<li><span>${item.name} ×${item.quantity}</span><span>$${(item.price * item.quantity).toFixed(2)}</span></li>`).join('')}
+              </ul>
+            </div>
+          ` : ''}
+
+          <div class="book-now-ticket-block">
+            <p class="field-label">Invitees</p>
+            ${this.invitees.length ? `
+              <ul class="book-now-price-rows">
+                ${this.invitees.map((invitee) => `<li><span>${invitee.name}</span><span>${invitee.rsvpStatus}</span></li>`).join('')}
+              </ul>
+            ` : '<p class="text-body-md book-now-placeholder">Just the host.</p>'}
+          </div>
+
+          <div class="book-now-ticket-block">
+            <p class="field-label">Bill Split</p>
+            <ul class="book-now-price-rows">
+              ${shares.map((share) => `<li><span>${share.label}</span><span>$${share.amount.toFixed(2)}</span></li>`).join('')}
+            </ul>
+          </div>
+        </div>
+      `;
+    },
+
+    // Creates the actual reservation record and persists it via
+    // Reservations.save(). Per CLAUDE.md there's no standalone
+    // booking-confirmation screen — Book Now ends with a brief transition
+    // and redirects to Dashboard. Dashboard itself isn't built yet, so this
+    // navigates to a blank placeholder screen for now.
+    confirmBooking() {
+      const partySize = Number(this.partySizeInput.value);
+      const dateTime = this.getSelectedDateTime();
+      if (!partySize || !dateTime || !this.selectedTableId) return;
+
+      const guest = Guest.get();
+      const isMember = Boolean(guest && Pricing.qualifiesForMembership(guest.id));
+
+      const { basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount, discount, finalTotal } = Pricing.calculate({
+        restaurant: this.restaurant,
+        partySize,
+        dateTime,
+        couponCode: this.couponInput.value,
+        isMember,
+      });
+
+      Reservations.save({
+        id: crypto.randomUUID(),
+        guestId: guest.id,
+        restaurantId: this.restaurant.id,
+        tableId: this.selectedTableId,
+        dateTime,
+        partySize,
+        invitees: this.invitees,
+        preOrderItems: this.getPreOrderItems(),
+        couponCode: this.couponInput.value.trim() || null,
+        pricingBreakdown: { basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount, discount, finalTotal },
+      });
+
+      this.confirmButton.disabled = true;
+      this.confirmStatus.hidden = false;
+      this.confirmStatus.innerHTML = '<p class="text-body-md">Confirming your reservation…</p>';
+
+      setTimeout(() => {
+        this.confirmStatus.innerHTML = '<p class="text-body-md">Booking confirmed!</p>';
+
+        setTimeout(() => {
+          console.log('Would redirect to Dashboard — Dashboard screen not built yet.');
+          UI.Router.showScreen('screen-dashboard');
+        }, 800);
+      }, 800);
     },
   },
 };

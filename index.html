@@ -523,14 +523,33 @@
 
       <section id="book-now-bill-split" class="book-now-section">
         <h2 class="text-headline-md">Bill Split</h2>
-        <p class="text-body-md book-now-placeholder">Split the total across accepted invitees — coming soon.</p>
+        <div id="book-now-bill-split-breakdown">
+          <p class="text-body-md book-now-placeholder">Select a party size and date/time to see the bill split.</p>
+        </div>
       </section>
 
       <section id="book-now-summary" class="book-now-section">
         <h2 class="text-headline-md">Summary</h2>
-        <p class="text-body-md book-now-placeholder">Ticket-style booking summary and confirmation — coming soon.</p>
+
+        <div id="book-now-summary-content">
+          <p class="text-body-md book-now-placeholder">Complete party size, date/time, and a table above to see your booking summary.</p>
+        </div>
+
+        <button type="button" id="book-now-confirm" class="btn btn-primary book-now-confirm-btn" disabled>Confirm Booking</button>
+
+        <div id="book-now-confirm-status" class="book-now-confirm-status" hidden></div>
       </section>
 
+    </div>
+  </section>
+
+  <!-- Screen 2 — Dashboard: placeholder only. Book Now's Confirm Booking
+       redirects here per CLAUDE.md (no standalone booking-confirmation
+       screen) once a reservation is saved; the real Dashboard build
+       (reservations list, QR codes, notification center) is separate work. -->
+  <section id="screen-dashboard" class="screen" hidden>
+    <div class="container section">
+      <p class="text-body-md">Dashboard — coming soon.</p>
     </div>
   </section>
 

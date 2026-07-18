@@ -14,4 +14,11 @@ const Reservations = {
   countForGuest(guestId) {
     return this.listForGuest(guestId).length;
   },
+
+  save(reservation) {
+    const reservations = this.list();
+    reservations.push(reservation);
+    Storage.set(RESERVATIONS_KEY, reservations);
+    return reservation;
+  },
 };

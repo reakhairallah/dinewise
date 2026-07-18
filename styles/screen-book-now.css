@@ -321,3 +321,42 @@
   text-align: center;
   color: var(--color-on-surface);
 }
+
+/* Ticket-style recap — a receipt-like stack of everything selected
+   elsewhere on this screen, read-only. */
+.book-now-ticket {
+  margin-top: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--color-surface-container);
+  border-radius: var(--radius-lg);
+  border: var(--border-ghost);
+}
+
+.book-now-ticket-restaurant {
+  color: var(--color-on-surface);
+  font-family: var(--font-serif);
+  font-size: var(--text-headline-sm-size);
+  font-weight: var(--text-headline-sm-weight);
+}
+
+.book-now-ticket-meta {
+  color: var(--color-on-surface-variant);
+  margin-top: var(--space-1);
+}
+
+.book-now-ticket-block {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--color-outline-variant);
+}
+
+.book-now-confirm-btn {
+  width: 100%;
+  margin-top: var(--space-3);
+}
+
+.book-now-confirm-status {
+  margin-top: var(--space-2);
+  text-align: center;
+  color: var(--color-on-surface);
+}
