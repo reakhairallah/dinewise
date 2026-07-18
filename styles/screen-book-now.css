@@ -59,7 +59,7 @@
 
 .book-now-field-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--space-3);
   margin-top: var(--space-2);
 }
@@ -70,12 +70,254 @@
   }
 }
 
-/* Plain stand-in for the real (separately built) visual table map — just
-   enough to click through and verify the availability/locking logic. */
+.book-now-time-field {
+  margin-top: var(--space-3);
+}
+
+.book-now-time-picker {
+  margin-top: var(--space-1);
+}
+
+/* Styled to read as a field control (matching .field-input's look), not a
+   generic disclosure triangle, since it's standing in for the old time input. */
+.book-now-time-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: var(--space-1);
+  border-bottom: 1px solid rgb(226 227 223 / 50%);
+  color: var(--color-on-surface);
+  cursor: pointer;
+  list-style: none;
+}
+
+.book-now-time-summary::-webkit-details-marker {
+  display: none;
+}
+
+.book-now-time-summary::after {
+  content: '▾';
+  color: var(--color-on-surface-variant);
+}
+
+.book-now-time-picker[open] .book-now-time-summary::after {
+  content: '▴';
+}
+
+/* Plain stand-in for the real (separately built) visual table map — reused
+   here for time-slot buttons too, just enough to click through and verify
+   the availability/locking/slot-generation logic. */
 .book-now-table-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   margin-top: var(--space-3);
   align-items: flex-start;
+}
+
+.book-now-time-picker .book-now-table-list {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+/* Wraps a time-slot button + its waitlist link (when full) so the two stay
+   paired as the list wraps. */
+.book-now-time-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+/* Clearly visible and clickable in its own right — not tucked behind the
+   disabled button it sits next to. */
+.book-now-waitlist-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-label-caps-size);
+  font-weight: var(--text-label-caps-weight);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.book-now-waitlist-link:hover {
+  color: var(--color-primary-fixed);
+}
+
+.book-now-waitlist-confirmation {
+  color: var(--color-on-surface);
+  margin-top: var(--space-1);
+}
+
+.book-now-pricing-breakdown {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--color-surface-container);
+  border-radius: var(--radius-lg);
+}
+
+.book-now-price-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  color: var(--color-on-surface-variant);
+}
+
+.book-now-price-rows li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.book-now-price-total {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: var(--border-ghost);
+  color: var(--color-on-surface);
+  font-family: var(--font-serif);
+  font-size: var(--text-headline-sm-size);
+  font-weight: var(--text-headline-sm-weight);
+}
+
+.book-now-preorder-summary {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: var(--border-ghost);
+}
+
+.book-now-preorder-total {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+  color: var(--color-on-surface);
+  font-weight: 600;
+}
+
+/* Pre-Order's quantity stepper — the renderItemExtra slot in the shared
+   renderMenuSections() renderer, so a menu item's row layout stays the same
+   one used by Restaurant View's read-only "View Menu" toggle. */
+.preorder-qty-control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.book-now-invite-summary {
+  margin-top: var(--space-2);
+  color: var(--color-on-surface-variant);
+}
+
+.book-now-invite-form {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-end;
+  margin-top: var(--space-2);
+}
+
+.book-now-invite-form .field-input {
+  flex: 1;
+}
+
+.book-now-invite-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-3) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.book-now-invite-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: 6px;
+  border-bottom: 1px solid var(--color-outline-variant);
+}
+
+.book-now-invite-name {
+  flex: 1;
+  color: var(--color-on-surface);
+}
+
+/* Cycles pending -> accepted -> declined -> pending on each click — one
+   control the host clicks through, not three separate buttons. */
+.book-now-status-pill {
+  flex-shrink: 0;
+  padding: 4px var(--space-2);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-outline-variant);
+  background: none;
+  color: var(--color-on-surface-variant);
+  font-family: var(--font-sans);
+  font-size: var(--text-label-caps-size);
+  font-weight: var(--text-label-caps-weight);
+  letter-spacing: var(--text-label-caps-tracking);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.book-now-status-pill.is-accepted {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.book-now-status-pill.is-declined {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.book-now-invite-remove {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  border: none;
+  background: none;
+  color: var(--color-on-surface-variant);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.book-now-invite-remove:hover {
+  color: var(--color-error);
+}
+
+.preorder-qty-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-outline-variant);
+  background: none;
+  color: var(--color-on-surface);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.preorder-qty-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.preorder-qty-value {
+  min-width: 1em;
+  text-align: center;
+  color: var(--color-on-surface);
 }

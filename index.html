@@ -461,11 +461,17 @@
             <label class="field-label" for="book-now-date">Date</label>
             <input class="field-input" type="date" id="book-now-date" />
           </div>
+        </div>
 
-          <div class="field">
-            <label class="field-label" for="book-now-time">Time</label>
-            <input class="field-input" type="time" id="book-now-time" step="3600" />
-          </div>
+        <!-- Fixed, restaurant-derived time slots (see Restaurants.getTimeSlots)
+             instead of free entry — collapsed behind a disclosure panel so a
+             restaurant with many slots doesn't dump a wall of buttons here. -->
+        <div class="field book-now-time-field">
+          <p class="field-label">Time</p>
+          <details class="book-now-time-picker" id="book-now-time-picker">
+            <summary class="book-now-time-summary" id="book-now-time-summary">Select a time</summary>
+            <div id="book-now-time-slots" class="book-now-table-list"></div>
+          </details>
         </div>
 
         <!-- Plain temporary list — the real table map is being built
@@ -477,22 +483,42 @@
 
       <section id="book-now-pricing" class="book-now-section">
         <h2 class="text-headline-md">Pricing</h2>
-        <p class="text-body-md book-now-placeholder">Live peak/off-peak pricing breakdown — coming soon.</p>
+
+        <div class="field">
+          <label class="field-label" for="book-now-coupon">Coupon / Membership Code</label>
+          <input class="field-input" type="text" id="book-now-coupon" placeholder="Optional" />
+        </div>
+
+        <div id="book-now-pricing-breakdown" class="book-now-pricing-breakdown">
+          <p class="text-body-md book-now-placeholder">Select a party size and date/time to see pricing.</p>
+        </div>
       </section>
 
       <section id="book-now-waitlist" class="book-now-section">
         <h2 class="text-headline-md">Waitlist</h2>
-        <p class="text-body-md book-now-placeholder">Join-the-waitlist option for full slots — coming soon.</p>
+        <div id="book-now-waitlist-status">
+          <p class="text-body-md book-now-placeholder">Pick a fully booked time above and join the waitlist for it.</p>
+        </div>
       </section>
 
       <section id="book-now-preorder" class="book-now-section">
         <h2 class="text-headline-md">Pre-Order</h2>
-        <p class="text-body-md book-now-placeholder">Menu pre-order selection — coming soon.</p>
+        <p class="text-body-md book-now-placeholder">Optional — add items now, no need to decide everything today.</p>
+        <div id="book-now-preorder-menu" class="restaurant-menu-body"></div>
       </section>
 
       <section id="book-now-invites" class="book-now-section">
         <h2 class="text-headline-md">Invites &amp; RSVP</h2>
-        <p class="text-body-md book-now-placeholder">Invite guests and track RSVP status — coming soon.</p>
+
+        <p id="book-now-invite-summary" class="text-body-md book-now-invite-summary"></p>
+
+        <div class="book-now-invite-form">
+          <input class="field-input" type="text" id="book-now-invite-name" placeholder="Guest name" />
+          <button type="button" id="book-now-invite-add" class="btn btn-secondary">Add</button>
+        </div>
+        <p id="book-now-invite-error" class="text-body-md field-error" hidden></p>
+
+        <ul id="book-now-invite-list" class="book-now-invite-list"></ul>
       </section>
 
       <section id="book-now-bill-split" class="book-now-section">
@@ -508,10 +534,13 @@
     </div>
   </section>
 
-  <script src="src/storage.js"></script>
-  <script src="src/seed-data.js"></script>
-  <script src="src/restaurants.js"></script>
-  <script src="src/ui.js"></script>
-  <script src="src/init.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/seed-data.js"></script>
+  <script src="js/restaurants.js"></script>
+  <script src="js/reservations.js"></script>
+  <script src="js/pricing.js"></script>
+  <script src="js/waitlist.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/init.js"></script>
 </body>
 </html>

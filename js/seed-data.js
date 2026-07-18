@@ -46,9 +46,7 @@ function buildSeedRestaurants() {
       dietaryBadges: [],
       tableLayout: createTableLayout([2, 2, 4, 4, 6, 8]),
       pricing: {
-        basePrice: 85,
-        peakMultiplier: 1.3,
-        offPeakMultiplier: 0.9,
+        basePrice: 30,
       },
       menuItems: [
         { id: crypto.randomUUID(), category: 'Starters', name: 'Charred Bone Marrow', description: 'Roasted marrow, herb gremolata, grilled sourdough.', price: 18 },
@@ -71,9 +69,7 @@ function buildSeedRestaurants() {
       dietaryBadges: ['Gluten-Free-Friendly'],
       tableLayout: createTableLayout([2, 2, 2, 4, 4, 6]),
       pricing: {
-        basePrice: 65,
-        peakMultiplier: 1.25,
-        offPeakMultiplier: 0.85,
+        basePrice: 22,
       },
       menuItems: [
         { id: crypto.randomUUID(), category: 'Starters', name: 'Chilled Oyster Trio', description: 'Mignonette, horseradish, citrus.', price: 21 },
@@ -96,9 +92,7 @@ function buildSeedRestaurants() {
       dietaryBadges: ['Vegetarian-Friendly'],
       tableLayout: createTableLayout([2, 2, 4, 4, 6]),
       pricing: {
-        basePrice: 95,
-        peakMultiplier: 1.35,
-        offPeakMultiplier: 0.9,
+        basePrice: 35,
       },
       menuItems: [
         { id: crypto.randomUUID(), category: 'Starters', name: 'Duck Liver Parfait', description: 'Brioche, fig compote, port reduction.', price: 22 },
@@ -121,9 +115,7 @@ function buildSeedRestaurants() {
       dietaryBadges: ['Vegetarian-Friendly', 'Vegan-Friendly'],
       tableLayout: createTableLayout([2, 2, 2, 4, 6]),
       pricing: {
-        basePrice: 55,
-        peakMultiplier: 1.2,
-        offPeakMultiplier: 0.85,
+        basePrice: 18,
       },
       menuItems: [
         { id: crypto.randomUUID(), category: 'Starters', name: 'Burrata & Heirloom Tomato', description: 'Basil oil, aged balsamic, sea salt.', price: 16 },
@@ -146,9 +138,7 @@ function buildSeedRestaurants() {
       dietaryBadges: ['Gluten-Free-Friendly'],
       tableLayout: createTableLayout([2, 2, 4]),
       pricing: {
-        basePrice: 140,
-        peakMultiplier: 1.15,
-        offPeakMultiplier: 0.95,
+        basePrice: 45,
       },
       menuItems: [
         { id: crypto.randomUUID(), category: 'Starters', name: 'Hokkaido Uni', description: 'Sea urchin, shiso, ponzu gelée.', price: 28 },
@@ -171,9 +161,7 @@ function buildSeedRestaurants() {
       dietaryBadges: ['Vegetarian-Friendly', 'Vegan-Friendly', 'Gluten-Free-Friendly'],
       tableLayout: createTableLayout([2, 2, 4, 4]),
       pricing: {
-        basePrice: 48,
-        peakMultiplier: 1.15,
-        offPeakMultiplier: 0.8,
+        basePrice: 15,
       },
       menuItems: [
         { id: crypto.randomUUID(), category: 'Starters', name: 'Whipped Hummus Trio', description: 'Beet, roasted garlic, harissa; warm pita.', price: 14 },
@@ -196,9 +184,7 @@ function buildSeedRestaurants() {
       dietaryBadges: ['Vegetarian-Friendly', 'Vegan-Friendly', 'Halal-Friendly'],
       tableLayout: createTableLayout([2, 4, 4, 6, 8]),
       pricing: {
-        basePrice: 52,
-        peakMultiplier: 1.2,
-        offPeakMultiplier: 0.85,
+        basePrice: 16,
       },
       menuItems: [
         { id: crypto.randomUUID(), category: 'Starters', name: 'Tandoori Vegetable Skewers', description: 'Charred peppers, paneer, mint chutney.', price: 15 },
@@ -221,9 +207,7 @@ function buildSeedRestaurants() {
       dietaryBadges: ['Vegetarian-Friendly', 'Gluten-Free-Friendly'],
       tableLayout: createTableLayout([2, 2, 4, 4, 6]),
       pricing: {
-        basePrice: 58,
-        peakMultiplier: 1.2,
-        offPeakMultiplier: 0.85,
+        basePrice: 18,
       },
       menuItems: [
         { id: crypto.randomUUID(), category: 'Starters', name: 'Esquites', description: 'Charred corn, cotija, chili-lime crema.', price: 12 },

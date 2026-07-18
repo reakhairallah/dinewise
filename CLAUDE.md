@@ -41,17 +41,17 @@ session.
 
 ## Code organization
 
-- Develop in separate files under `src/`, each exposing one namespace object (except
+- Develop in separate files under `js/`, each exposing one namespace object (except
   `seed-data.js`, which just provides fixture-generation globals for `restaurants.js`'s
   `seed()`), in this dependency order: `storage.js` (`Storage`) → `seed-data.js` →
   `restaurants.js` (`Restaurants`) → `reservations.js` (`Reservations`) → `pricing.js`
   (`Pricing`) → `recommendation.js` (`Recommendation`) → `waitlist.js` (`Waitlist`) →
   `qr.js` (`QR`) → `ui.js` (`UI`) → `init.js` (app start, inside a `DOMContentLoaded`
   listener).
-- Each `src/` file is loaded directly via its own `<script>` tag in `index.html`, in dependency
+- Each `js/` file is loaded directly via its own `<script>` tag in `index.html`, in dependency
   order: storage.js → seed-data.js → restaurants.js → reservations.js → pricing.js →
   recommendation.js → waitlist.js → qr.js → ui.js → init.js. No concatenation step, no bundler.
-- Final deliverable: `index.html` + split files under `src/` and `styles/`. No single
+- Final deliverable: `index.html` + split files under `js/` and `styles/`. No single
   `app.js` or single `style.css` — multiple files confirmed acceptable.
 - Single `index.html` — this is an SPA, not multiple pages. Each screen is a `<section>`/`<div>`
   with a stable `id` (e.g. `#screen-signup`), shown/hidden via JS. Never navigate to a second
@@ -94,9 +94,11 @@ session.
   at restaurant-creation time and persisted — never re-randomize on load/render.
 - **Reservation** — guestId, restaurantId, tableId, dateTime, partySize, invitees[]
   (`{ name, rsvpStatus: 'pending' | 'accepted' | 'declined' }`), preOrderItems[], couponCode?,
-  pricingBreakdown (basePrice, peakAdjustment, discount, finalTotal). QR code is derived from
-  this record on demand, not stored separately.
-- **Waitlist entry** — restaurantId, tableId, dateTime, guestId, status: `'waiting' | 'ready'`.
+  pricingBreakdown (basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount,
+  discount, finalTotal). QR code is derived from this record on demand, not stored separately.
+- **Waitlist entry** — restaurantId, dateTime, guestId, partySize, status: `'waiting' | 'ready'`.
+  No tableId — a waitlist entry means no specific table was ever selected; partySize is the
+  field any future resolution logic needs instead.
 
 ## Screens (7 total — do not add standalone pages beyond these)
 
@@ -144,12 +146,12 @@ lock is written to the restaurant's own data (not only the guest's reservation),
 table/slot can't be double-booked.
 
 **Waitlist:** joined from within Book Now when a slot is full. Tracked in the Dashboard
-notification center (no separate screen). Status is evaluated lazily — checked when the
-Dashboard is viewed, never pushed. Promotion from `waiting` to `ready` happens only via an
-explicit admin action — no timers, no countdown, no auto-detection.
+notification center (no separate screen). Entries are always created with status `waiting`
+and stay that way — there is no promotion to `ready` at all right now (no timers, no
+countdown, no auto-detection, no admin action either).
 
 **Booking cap:** a max active-reservations limit per guest. Blocks new bookings with a message
-when reached — no extra screen. Exact number: TBD.
+when reached — no extra screen. Exact number: 3.
 
 **Role & data sharing:** one profile per browser. `localStorage` is not scoped by role — admin
 and customer read/write the same dataset, so changes made in one role are visible instantly
@@ -181,12 +183,6 @@ if the product direction changes, not things to silently work around.
 
 ## Deferred (decide during implementation, not structural — none of these block starting)
 
-- Whether/how membership works at all — don't build pricing logic around it until this is
-  confirmed; the pricing pipeline already treats it as an optional, independent discount step
-  so adding it later won't require reordering anything.
-- Coupon validation approach — the user enters a code string (`couponCode` on the reservation
-  is already fixed); how it's checked and which codes exist are both open.
-- Exact booking cap number (e.g. 3–5 active reservations)
 - Exact menu item field structure
 - Exact badge field structure
 - Visual/branding direction (colors, typography) — Screen 1 can be built with placeholder

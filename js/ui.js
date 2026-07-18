@@ -512,25 +512,86 @@ const UI = {
       this.title = document.getElementById('book-now-title');
       this.partySizeInput = document.getElementById('book-now-party-size');
       this.dateInput = document.getElementById('book-now-date');
-      this.timeInput = document.getElementById('book-now-time');
+      this.timePicker = document.getElementById('book-now-time-picker');
+      this.timeSummary = document.getElementById('book-now-time-summary');
+      this.timeSlotsList = document.getElementById('book-now-time-slots');
       this.tableList = document.getElementById('book-now-tables');
+      this.couponInput = document.getElementById('book-now-coupon');
+      this.pricingBreakdown = document.getElementById('book-now-pricing-breakdown');
+      this.waitlistStatus = document.getElementById('book-now-waitlist-status');
+      this.preOrderMenu = document.getElementById('book-now-preorder-menu');
+      this.inviteSummary = document.getElementById('book-now-invite-summary');
+      this.inviteNameInput = document.getElementById('book-now-invite-name');
+      this.inviteError = document.getElementById('book-now-invite-error');
+      this.inviteList = document.getElementById('book-now-invite-list');
 
       document.getElementById('book-now-back')?.addEventListener('click', () => UI.Router.showScreen('screen-explore'));
 
-      [this.partySizeInput, this.dateInput, this.timeInput].forEach((input) => {
-        input.addEventListener('input', () => this.renderAvailableTables());
+      [this.partySizeInput, this.dateInput].forEach((input) => {
+        input.addEventListener('input', () => {
+          this.renderTimeSlots();
+          this.renderAvailableTables();
+          this.renderPricing();
+          this.renderInvitees();
+        });
       });
 
-      // Event-delegated so it keeps working after renderAvailableTables()
-      // replaces the list's innerHTML.
+      this.couponInput.addEventListener('input', () => this.renderPricing());
+
+      // Event-delegated so it keeps working after renderTimeSlots()/
+      // renderAvailableTables() replace their list's innerHTML.
+      this.timeSlotsList.addEventListener('click', (event) => {
+        const option = event.target.closest('[data-time]');
+        if (option) this.selectTime(option.dataset.time);
+
+        const waitlistLink = event.target.closest('[data-waitlist-time]');
+        if (waitlistLink) this.joinWaitlist(waitlistLink.dataset.waitlistTime);
+      });
+
       this.tableList.addEventListener('click', (event) => {
         const option = event.target.closest('[data-table-id]');
         if (option) this.selectTable(option.dataset.tableId);
+      });
+
+      // Targeted DOM update on the clicked control, not a full re-render —
+      // a full renderMenuSections() re-run on every +/- click would work,
+      // it'd just be pointlessly wasteful for something this small.
+      this.preOrderMenu.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-qty-action]');
+        if (!button) return;
+
+        const control = button.closest('[data-item-id]');
+        const itemId = control.dataset.itemId;
+        const delta = button.dataset.qtyAction === 'increment' ? 1 : -1;
+        const next = Math.max(0, (this.preOrderQuantities[itemId] ?? 0) + delta);
+
+        this.preOrderQuantities[itemId] = next;
+        control.querySelector('.preorder-qty-value').textContent = next;
+        this.renderPricing();
+      });
+
+      this.inviteNameInput.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        this.addInvitee();
+      });
+
+      document.getElementById('book-now-invite-add')?.addEventListener('click', () => this.addInvitee());
+
+      // Event-delegated so it keeps working after renderInvitees() replaces
+      // the list's innerHTML.
+      this.inviteList.addEventListener('click', (event) => {
+        const statusPill = event.target.closest('[data-action="cycle-status"]');
+        if (statusPill) this.cycleInviteeStatus(Number(statusPill.dataset.inviteeIndex));
+
+        const removeButton = event.target.closest('[data-action="remove"]');
+        if (removeButton) this.removeInvitee(Number(removeButton.dataset.inviteeIndex));
       });
     },
 
     open(restaurant) {
       this.restaurant = restaurant;
+      this.selectedTime = null;
 
       this.photo.src = restaurant.photoUrl;
       this.photo.alt = restaurant.title;
@@ -539,19 +600,96 @@ const UI = {
       this.partySizeInput.value = 2;
       this.dateInput.value = '';
       this.dateInput.min = toDateInputValue(new Date());
-      this.timeInput.value = '';
-      this.timeInput.min = restaurant.openTime;
-      this.timeInput.max = restaurant.closeTime;
+      this.timeSummary.textContent = 'Select a time';
+      this.timePicker.removeAttribute('open');
+      this.renderTimeSlots();
+      this.couponInput.value = '';
       this.renderAvailableTables();
+      this.renderPreOrderMenu();
+      this.renderPricing();
+      this.waitlistStatus.innerHTML = '<p class="text-body-md book-now-placeholder">Pick a fully booked time above and join the waitlist for it.</p>';
+
+      this.invitees = [];
+      this.inviteNameInput.value = '';
+      this.inviteError.hidden = true;
+      this.renderInvitees();
 
       UI.Router.showScreen('screen-book-now');
+    },
+
+    // Fixed slots for this restaurant (see Restaurants.getTimeSlots) — every
+    // button just picks one, there's nothing to validate against open/close
+    // hours or slot spacing since the list itself is already constrained to
+    // both. Once a party size and date are in, a slot with zero tables that
+    // fit is disabled/grayed out instead of being clickable and then
+    // failing — the button itself is the "this time is booked" signal.
+    renderTimeSlots() {
+      const slots = Restaurants.getTimeSlots(this.restaurant);
+
+      if (!slots.length) {
+        this.timeSlotsList.innerHTML = '<p class="text-body-md book-now-placeholder">No reservation times available.</p>';
+        return;
+      }
+
+      const partySize = Number(this.partySizeInput.value);
+      const canCheckAvailability = partySize && this.dateInput.value >= this.dateInput.min;
+
+      this.timeSlotsList.innerHTML = slots.map((time) => {
+        const isFull = canCheckAvailability
+          && getAvailableTables(this.restaurant, partySize, `${this.dateInput.value}T${time}`).length === 0;
+
+        // The waitlist link sits next to the disabled button, not behind it —
+        // a disabled element can't receive clicks, so it needs its own
+        // separately clickable affordance.
+        return `
+          <div class="book-now-time-slot">
+            <button type="button" class="btn btn-secondary book-now-table-option" data-time="${time}" ${isFull ? 'disabled' : ''}>
+              ${formatTime12h(time)}
+            </button>
+            ${isFull ? `<button type="button" class="book-now-waitlist-link" data-waitlist-time="${time}">Fully booked — Join Waitlist</button>` : ''}
+          </div>
+        `;
+      }).join('');
+    },
+
+    // Joining the waitlist is a dead end for this attempt, not an
+    // alternative path to a reservation — no time ends up selected, so
+    // Pricing/Pre-Order/Invites/Bill Split/Summary all stay in their empty,
+    // nothing-selected state instead of acting like a table was booked.
+    joinWaitlist(time) {
+      const guest = Guest.get();
+
+      Waitlist.join({
+        restaurantId: this.restaurant.id,
+        dateTime: `${this.dateInput.value}T${time}`,
+        guestId: guest.id,
+        partySize: Number(this.partySizeInput.value),
+      });
+
+      this.selectedTime = null;
+      this.timeSummary.textContent = 'Select a time';
+      this.timePicker.removeAttribute('open');
+      this.renderAvailableTables();
+      this.renderPricing();
+
+      this.waitlistStatus.innerHTML = `<p class="text-body-md book-now-waitlist-confirmation">You're on the waitlist for ${formatTime12h(time)}.</p>`;
+      document.getElementById('book-now-waitlist')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    },
+
+    selectTime(time) {
+      this.selectedTime = time;
+      this.timeSummary.textContent = formatTime12h(time);
+      this.timePicker.removeAttribute('open');
+
+      this.renderAvailableTables();
+      this.renderPricing();
     },
 
     // 'YYYY-MM-DD' + 'HH:MM' joined with 'T' — the exact shape a table's
     // locks object keys its slots by (see seed-data.js's SEED_SLOT_POOL).
     getSelectedDateTime() {
-      if (!this.dateInput.value || !this.timeInput.value) return null;
-      return `${this.dateInput.value}T${this.timeInput.value}`;
+      if (!this.dateInput.value || !this.selectedTime) return null;
+      return `${this.dateInput.value}T${this.selectedTime}`;
     },
 
     renderAvailableTables() {
@@ -563,16 +701,13 @@ const UI = {
         return;
       }
 
-      // min/max on the inputs steer the native picker, but typed input can
+      // min on the date input steers the native picker, but typed input can
       // still slip through — re-check here so a bad value never reaches
-      // getAvailableTables.
+      // getAvailableTables. Time doesn't need the same treatment anymore:
+      // it only ever comes from renderTimeSlots()'s buttons, which are
+      // already constrained to this restaurant's hours.
       if (this.dateInput.value < this.dateInput.min) {
         this.tableList.innerHTML = '<p class="text-body-md book-now-placeholder">Pick a date that hasn\'t already passed.</p>';
-        return;
-      }
-
-      if (this.timeInput.value < this.restaurant.openTime || this.timeInput.value > this.restaurant.closeTime) {
-        this.tableList.innerHTML = `<p class="text-body-md book-now-placeholder">${this.restaurant.title} is open ${Restaurants.formatHours(this.restaurant)}.</p>`;
         return;
       }
 
@@ -605,7 +740,159 @@ const UI = {
       table.locks[dateTime] = true;
       Restaurants.set(this.restaurant);
 
+      this.renderTimeSlots();
       this.renderAvailableTables();
+      this.renderPricing();
+    },
+
+    // Live pricing breakdown — Pricing.calculate() does the actual pipeline
+    // math (base -> peak/off-peak multiplier -> coupon/membership discount
+    // -> total); this just re-reads the current selections and renders the
+    // result.
+    renderPricing() {
+      const partySize = Number(this.partySizeInput.value);
+      const dateTime = this.getSelectedDateTime();
+
+      if (!partySize || !dateTime) {
+        this.pricingBreakdown.innerHTML = '<p class="text-body-md book-now-placeholder">Select a party size and date/time to see pricing.</p>';
+        return;
+      }
+
+      const guest = Guest.get();
+      const isMember = Boolean(guest && Pricing.qualifiesForMembership(guest.id));
+
+      const { basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount, finalTotal } = Pricing.calculate({
+        restaurant: this.restaurant,
+        partySize,
+        dateTime,
+        couponCode: this.couponInput.value,
+        isMember,
+      });
+
+      const rows = [
+        `<li><span>Base price (${partySize} × $${this.restaurant.pricing.basePrice.toFixed(2)})</span><span>$${basePrice.toFixed(2)}</span></li>`,
+        `<li><span>${isPeak ? 'Peak' : 'Off-Peak'} adjustment</span><span>${peakAdjustment >= 0 ? '+' : '−'}$${Math.abs(peakAdjustment).toFixed(2)}</span></li>`,
+      ];
+      if (couponDiscount > 0) {
+        rows.push(`<li><span>Coupon discount</span><span>−$${couponDiscount.toFixed(2)}</span></li>`);
+      }
+      if (membershipDiscount > 0) {
+        rows.push(`<li><span>Membership discount</span><span>−$${membershipDiscount.toFixed(2)}</span></li>`);
+      }
+
+      // Pre-order isn't part of Pricing.calculate()'s pipeline (it's not
+      // subject to the peak multiplier or coupon/membership discounts) —
+      // it's summed in separately here and folded into the displayed total.
+      const preOrderItems = this.getPreOrderItems();
+      const preOrderTotal = preOrderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const combinedTotal = finalTotal + preOrderTotal;
+
+      const preOrderSection = preOrderItems.length ? `
+        <div class="book-now-preorder-summary">
+          <p class="field-label">Pre-order Items</p>
+          <ul class="book-now-price-rows">
+            ${preOrderItems.map((item) => `<li><span>${item.name} ×${item.quantity}</span><span>$${(item.price * item.quantity).toFixed(2)}</span></li>`).join('')}
+          </ul>
+          <p class="book-now-preorder-total"><span>Pre-order total</span><span>$${preOrderTotal.toFixed(2)}</span></p>
+        </div>
+      ` : '';
+
+      this.pricingBreakdown.innerHTML = `
+        <ul class="book-now-price-rows">${rows.join('')}</ul>
+        ${preOrderSection}
+        <p class="book-now-price-total"><span>Total</span><span>$${combinedTotal.toFixed(2)}</span></p>
+      `;
+    },
+
+    // Reuses renderMenuSections (Restaurant View's read-only "View Menu"
+    // menu renderer) via its renderItemExtra hook to add a quantity stepper
+    // per item, instead of writing a second menu-rendering function.
+    renderPreOrderMenu() {
+      this.preOrderQuantities = {}; // menuItemId -> quantity, reset per restaurant
+
+      this.preOrderMenu.innerHTML = renderMenuSections(this.restaurant.menuItems, {
+        renderItemExtra: (item) => `
+          <div class="preorder-qty-control" data-item-id="${item.id}">
+            <button type="button" class="preorder-qty-btn" data-qty-action="decrement" aria-label="Decrease ${item.name} quantity">−</button>
+            <span class="preorder-qty-value">0</span>
+            <button type="button" class="preorder-qty-btn" data-qty-action="increment" aria-label="Increase ${item.name} quantity">+</button>
+          </div>
+        `,
+      });
+    },
+
+    // preOrderItems[] shape per CLAUDE.md's reservation data model — a
+    // self-contained snapshot (name/price captured now, not looked up again
+    // later) of every item with a quantity above zero. No pricing impact
+    // yet: nothing calls this into Pricing.calculate().
+    getPreOrderItems() {
+      return this.restaurant.menuItems
+        .filter((item) => (this.preOrderQuantities[item.id] ?? 0) > 0)
+        .map((item) => ({
+          menuItemId: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: this.preOrderQuantities[item.id],
+        }));
+    },
+
+    // this.invitees is already exactly the invitees[] shape CLAUDE.md's
+    // reservation data model calls for — {name, rsvpStatus} — so Bill Split
+    // can later do this.invitees.filter(i => i.rsvpStatus === 'accepted')
+    // directly, no transforming first.
+    renderInvitees() {
+      const partySize = Number(this.partySizeInput.value) || 0;
+      this.inviteSummary.textContent = `Party of ${partySize} · ${this.invitees.length} invited`;
+
+      this.inviteList.innerHTML = this.invitees.map((invitee, index) => `
+        <li class="book-now-invite-item">
+          <span class="book-now-invite-name">${invitee.name}</span>
+          <button type="button" class="book-now-status-pill is-${invitee.rsvpStatus}" data-action="cycle-status" data-invitee-index="${index}">
+            ${invitee.rsvpStatus}
+          </button>
+          <button type="button" class="book-now-invite-remove" data-action="remove" data-invitee-index="${index}" aria-label="Remove ${invitee.name}">×</button>
+        </li>
+      `).join('');
+    },
+
+    // Blocks blank names and duplicates (case-insensitive, trimmed) — every
+    // new entry starts 'pending', never randomized.
+    addInvitee() {
+      const name = this.inviteNameInput.value.trim();
+      this.inviteError.hidden = true;
+
+      if (!name) {
+        this.inviteError.textContent = 'Enter a name to add.';
+        this.inviteError.hidden = false;
+        return;
+      }
+
+      const isDuplicate = this.invitees.some((invitee) => invitee.name.toLowerCase() === name.toLowerCase());
+      if (isDuplicate) {
+        this.inviteError.textContent = `${name} is already invited.`;
+        this.inviteError.hidden = false;
+        return;
+      }
+
+      this.invitees.push({ name, rsvpStatus: 'pending' });
+      this.inviteNameInput.value = '';
+      this.renderInvitees();
+    },
+
+    removeInvitee(index) {
+      this.invitees.splice(index, 1);
+      this.renderInvitees();
+    },
+
+    // The host clicks through this one control — pending -> accepted ->
+    // declined -> pending — there's no real second guest to actually RSVP.
+    cycleInviteeStatus(index) {
+      const invitee = this.invitees[index];
+      if (!invitee) return;
+
+      const cycle = ['pending', 'accepted', 'declined'];
+      invitee.rsvpStatus = cycle[(cycle.indexOf(invitee.rsvpStatus) + 1) % cycle.length];
+      this.renderInvitees();
     },
   },
 };
