@@ -50,6 +50,17 @@ const Restaurants = {
     return slots;
   },
 
+  // A table is bookable for a given slot if it can seat the party and isn't
+  // already locked for that exact dateTime — table availability itself was
+  // randomized once at seed time (see seed-data.js), this just reads it.
+  isTableAvailable(table, partySize, dateTime) {
+    return table.capacity >= partySize && !table.locks[dateTime];
+  },
+
+  getAvailableTables(restaurant, partySize, dateTime) {
+    return restaurant.tableLayout.filter((table) => this.isTableAvailable(table, partySize, dateTime));
+  },
+
   get(id) {
     return this.list().find((restaurant) => restaurant.id === id) ?? null;
   },

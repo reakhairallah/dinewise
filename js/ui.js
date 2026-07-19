@@ -44,72 +44,12 @@ const renderMenuSections = (menuItems, { renderItemExtra } = {}) => Object.entri
     </div>
   `).join('');
 
-// Strips the suffixes guest tags/restaurant badges use around the same
-// underlying concept (e.g. 'vegan' vs 'Vegan-Friendly', 'gluten-free' vs
-// 'Gluten') so the two vocabularies can be compared directly.
-const normalizeTag = (value) => value
-  .toLowerCase()
-  .replace(/-friendly$/, '')
-  .replace(/-allergy$/, '')
-  .replace(/-free$/, '');
-
-// Counts how many of the guest's tags refer to the same thing as one of the
-// restaurant's badges. Used for both dietary preferences and allergy cautions —
-// it's a plain overlap check either way; which array is passed in is what
-// decides whether an overlap is a good sign or a bad one, not this function.
-const countTagOverlap = (guestTags = [], restaurantTags = []) => {
-  const normalizedRestaurantTags = restaurantTags.map(normalizeTag);
-  return guestTags
-    .map(normalizeTag)
-    .filter((tag) => normalizedRestaurantTags.some((other) => tag === other || tag.includes(other) || other.includes(tag)))
-    .length;
-};
-
-const CUISINE_MATCH_SCORE = 2;
-const DIETARY_MATCH_SCORE = 1;
-
 const hasProfileSignal = (guest) => Boolean(
   guest?.favoriteCuisines?.length || guest?.dietaryPreferences?.length || guest?.allergyTags?.length,
 );
 
-const hasAllergyConflict = (restaurant, guest) => countTagOverlap(guest.allergyTags, restaurant.allergenCautions) > 0;
-
-// Higher score = better match. Favorite cuisine matching is worth more than a
-// dietary-preference match. Allergy cautions are handled separately in
-// compareByRecommendation, not folded into this score.
-const matchScore = (restaurant, guest) => {
-  let score = 0;
-
-  if (guest.favoriteCuisines?.some((cuisine) => cuisine.toLowerCase() === restaurant.cuisine.toLowerCase())) {
-    score += CUISINE_MATCH_SCORE;
-  }
-
-  score += countTagOverlap(guest.dietaryPreferences, restaurant.dietaryBadges) * DIETARY_MATCH_SCORE;
-
-  return score;
-};
-
-// Allergy-conflict status is the primary sort key — a conflict-free restaurant
-// always outranks a conflicting one, no matter the score. Only when both
-// restaurants share the same conflict status does match score break the tie.
-const compareByRecommendation = (a, b, guest) => {
-  const aConflict = hasAllergyConflict(a, guest);
-  const bConflict = hasAllergyConflict(b, guest);
-  if (aConflict !== bConflict) return aConflict ? 1 : -1;
-
-  return matchScore(b, guest) - matchScore(a, guest);
-};
-
 // Local (not UTC) 'YYYY-MM-DD', matching what a <input type="date"> reads/writes.
 const toDateInputValue = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
-// A table is bookable for a given slot if it can seat the party and isn't
-// already locked for that exact dateTime — table availability itself was
-// randomized once at seed time (see seed-data.js), this just reads it.
-const isTableAvailable = (table, partySize, dateTime) => table.capacity >= partySize && !table.locks[dateTime];
-
-const getAvailableTables = (restaurant, partySize, dateTime) => restaurant.tableLayout
-  .filter((table) => isTableAvailable(table, partySize, dateTime));
 
 // Closes any open element matching `selector` (a <details>) when a click lands
 // outside it. Returns the matched elements so callers can reuse the NodeList.
@@ -382,7 +322,7 @@ const UI = {
     },
 
     rank(guest) {
-      const ranked = [...Restaurants.list()].sort((a, b) => compareByRecommendation(a, b, guest));
+      const ranked = [...Restaurants.list()].sort((a, b) => Recommendation.compare(a, b, guest));
       this.recommendedId = ranked[0]?.id ?? null;
       this.render(ranked);
     },
@@ -511,6 +451,7 @@ const UI = {
       this.photo = document.getElementById('book-now-photo');
       this.title = document.getElementById('book-now-title');
       this.partySizeInput = document.getElementById('book-now-party-size');
+      this.partySizeError = document.getElementById('book-now-party-size-error');
       this.dateInput = document.getElementById('book-now-date');
       this.timePicker = document.getElementById('book-now-time-picker');
       this.timeSummary = document.getElementById('book-now-time-summary');
@@ -540,6 +481,12 @@ const UI = {
           this.renderInvitees();
         });
       });
+
+      // Enforced on commit (blur/Enter/stepper), not on every keystroke —
+      // clamping mid-typing would fight the host as they type a new value.
+      // Native 'change' still fires for stepper clicks, so the floor holds
+      // there too.
+      this.partySizeInput.addEventListener('change', () => this.enforcePartySizeFloor());
 
       this.couponInput.addEventListener('input', () => this.renderPricing());
 
@@ -604,6 +551,7 @@ const UI = {
       this.title.textContent = restaurant.title;
 
       this.partySizeInput.value = 2;
+      this.partySizeError.hidden = true;
       this.dateInput.value = '';
       this.dateInput.min = toDateInputValue(new Date());
       this.timeSummary.textContent = 'Select a time';
@@ -646,7 +594,7 @@ const UI = {
 
       this.timeSlotsList.innerHTML = slots.map((time) => {
         const isFull = canCheckAvailability
-          && getAvailableTables(this.restaurant, partySize, `${this.dateInput.value}T${time}`).length === 0;
+          && Restaurants.getAvailableTables(this.restaurant, partySize, `${this.dateInput.value}T${time}`).length === 0;
 
         // The waitlist link sits next to the disabled button, not behind it —
         // a disabled element can't receive clicks, so it needs its own
@@ -721,7 +669,7 @@ const UI = {
         return;
       }
 
-      const available = getAvailableTables(this.restaurant, partySize, dateTime);
+      const available = Restaurants.getAvailableTables(this.restaurant, partySize, dateTime);
 
       if (!available.length) {
         this.tableList.innerHTML = '<p class="text-body-md book-now-placeholder">No tables available for that party size and time.</p>';
@@ -756,31 +704,43 @@ const UI = {
       this.renderPricing();
     },
 
-    // Live pricing breakdown — Pricing.calculate() does the actual pipeline
-    // math (base -> peak/off-peak multiplier -> coupon/membership discount
-    // -> total); this just re-reads the current selections and renders the
-    // result.
-    renderPricing() {
+    // Single source of the current pricing pipeline result for this render
+    // cycle — computed once here, then reused by renderPricing/renderBillSplit/
+    // renderSummary/confirmBooking instead of each re-deriving isMember and
+    // re-calling Pricing.calculate() with the same args.
+    getPricingBreakdown() {
       const partySize = Number(this.partySizeInput.value);
       const dateTime = this.getSelectedDateTime();
-
-      if (!partySize || !dateTime) {
-        this.pricingBreakdown.innerHTML = '<p class="text-body-md book-now-placeholder">Select a party size and date/time to see pricing.</p>';
-        this.renderBillSplit();
-        this.renderSummary();
-        return;
-      }
+      if (!partySize || !dateTime) return null;
 
       const guest = Guest.get();
       const isMember = Boolean(guest && Pricing.qualifiesForMembership(guest.id));
 
-      const { basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount, finalTotal } = Pricing.calculate({
+      return Pricing.calculate({
         restaurant: this.restaurant,
         partySize,
         dateTime,
         couponCode: this.couponInput.value,
         isMember,
       });
+    },
+
+    // Live pricing breakdown — Pricing.calculate() does the actual pipeline
+    // math (base -> peak/off-peak multiplier -> coupon/membership discount
+    // -> total); this just re-reads the current selections and renders the
+    // result.
+    renderPricing() {
+      const partySize = Number(this.partySizeInput.value);
+      const pricing = this.getPricingBreakdown();
+
+      if (!pricing) {
+        this.pricingBreakdown.innerHTML = '<p class="text-body-md book-now-placeholder">Select a party size and date/time to see pricing.</p>';
+        this.renderBillSplit();
+        this.renderSummary();
+        return;
+      }
+
+      const { basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount, finalTotal } = pricing;
 
       const rows = [
         `<li><span>Base price (${partySize} × $${this.restaurant.pricing.basePrice.toFixed(2)})</span><span>$${basePrice.toFixed(2)}</span></li>`,
@@ -858,6 +818,30 @@ const UI = {
       return this.invitees.filter((invitee) => invitee.rsvpStatus !== 'declined').length;
     },
 
+    // Blocks (doesn't silently fix) a party size drop that would strand
+    // already-added invitees — the host decides who gets removed/declined,
+    // never this. Reverts the field to the lowest size that still fits
+    // host + current active invitees and explains why, instead of letting a
+    // too-low value through and only catching it later at the next Add.
+    enforcePartySizeFloor() {
+      const minRequired = 1 + this.getActiveInviteeCount();
+      const value = Number(this.partySizeInput.value) || 0;
+
+      if (value >= minRequired) {
+        this.partySizeError.hidden = true;
+        return;
+      }
+
+      this.partySizeInput.value = minRequired;
+      this.partySizeError.textContent = `Remove or decline an invitee before reducing party size below ${minRequired}.`;
+      this.partySizeError.hidden = false;
+
+      this.renderTimeSlots();
+      this.renderAvailableTables();
+      this.renderPricing();
+      this.renderInvitees();
+    },
+
     // this.invitees is already exactly the invitees[] shape CLAUDE.md's
     // reservation data model calls for — {name, rsvpStatus} — so Bill Split
     // can later do this.invitees.filter(i => i.rsvpStatus === 'accepted')
@@ -903,26 +887,14 @@ const UI = {
     // — the same number Pricing shows as "Total"), not just finalTotal on
     // its own.
     renderBillSplit() {
-      const partySize = Number(this.partySizeInput.value);
-      const dateTime = this.getSelectedDateTime();
+      const pricing = this.getPricingBreakdown();
 
-      if (!partySize || !dateTime) {
+      if (!pricing) {
         this.billSplitBreakdown.innerHTML = '<p class="text-body-md book-now-placeholder">Select a party size and date/time to see the bill split.</p>';
         return;
       }
 
-      const guest = Guest.get();
-      const isMember = Boolean(guest && Pricing.qualifiesForMembership(guest.id));
-
-      const { finalTotal } = Pricing.calculate({
-        restaurant: this.restaurant,
-        partySize,
-        dateTime,
-        couponCode: this.couponInput.value,
-        isMember,
-      });
-
-      const combinedTotal = finalTotal + this.getPreOrderTotal();
+      const combinedTotal = pricing.finalTotal + this.getPreOrderTotal();
       const shares = this.getBillSplitShares(combinedTotal);
 
       this.billSplitBreakdown.innerHTML = `
@@ -1000,16 +972,7 @@ const UI = {
 
       this.confirmButton.disabled = false;
 
-      const guest = Guest.get();
-      const isMember = Boolean(guest && Pricing.qualifiesForMembership(guest.id));
-
-      const { basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount, finalTotal } = Pricing.calculate({
-        restaurant: this.restaurant,
-        partySize,
-        dateTime,
-        couponCode: this.couponInput.value,
-        isMember,
-      });
+      const { basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount, finalTotal } = this.getPricingBreakdown();
 
       const preOrderItems = this.getPreOrderItems();
       const preOrderTotal = this.getPreOrderTotal();
@@ -1077,15 +1040,7 @@ const UI = {
       if (!partySize || !dateTime || !this.selectedTableId) return;
 
       const guest = Guest.get();
-      const isMember = Boolean(guest && Pricing.qualifiesForMembership(guest.id));
-
-      const { basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount, discount, finalTotal } = Pricing.calculate({
-        restaurant: this.restaurant,
-        partySize,
-        dateTime,
-        couponCode: this.couponInput.value,
-        isMember,
-      });
+      const { basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount, discount, finalTotal } = this.getPricingBreakdown();
 
       Reservations.save({
         id: crypto.randomUUID(),
