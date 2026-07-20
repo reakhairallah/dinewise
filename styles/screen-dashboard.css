@@ -1,0 +1,181 @@
+/* =========================================================
+   Screen 2 — Dashboard
+   ========================================================= */
+.dashboard-title {
+  color: var(--color-on-surface);
+  white-space: nowrap;
+}
+
+.dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.dashboard-section {
+  scroll-margin-top: 80px;
+}
+
+.dashboard-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.dashboard-profile-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.dashboard-save-status {
+  color: var(--color-on-surface-variant);
+}
+
+.dashboard-placeholder {
+  color: var(--color-on-surface-variant);
+  margin-top: var(--space-2);
+}
+
+/* Active-count ring and membership badge are deliberately two separate
+   elements, not one combined visual — active reservations (future dateTime)
+   and total-ever reservations (membership) drift apart over time. */
+.dashboard-status-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  margin-block: var(--space-4);
+}
+
+.dashboard-ring {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+}
+
+.dashboard-ring-svg {
+  /* Starts the fill at 12 o'clock instead of the SVG default of 3 o'clock. */
+  transform: rotate(-90deg);
+}
+
+.dashboard-ring-track {
+  fill: none;
+  stroke: var(--color-outline-variant);
+  stroke-width: 8;
+}
+
+.dashboard-ring-fill {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s ease;
+}
+
+.dashboard-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.dashboard-ring-value {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--color-on-surface);
+}
+
+.dashboard-ring-label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-on-surface-variant);
+}
+
+.dashboard-membership-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-outline-variant);
+  color: var(--color-on-surface-variant);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-md-size);
+  white-space: nowrap;
+}
+
+.dashboard-membership-badge.is-member {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.dashboard-reservations-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.dashboard-reservation-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background-color: var(--color-surface-container);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.dashboard-reservation-meta {
+  color: var(--color-on-surface-variant);
+  margin-top: var(--space-1);
+}
+
+.dashboard-reservation-note {
+  color: var(--color-primary);
+  margin-top: var(--space-1);
+}
+
+.dashboard-reservation-qr {
+  flex-shrink: 0;
+  color: var(--color-on-surface);
+}
+
+.qr-pattern rect {
+  fill: currentColor;
+}
+
+/* Waitlist entries never reserved a table — dashed border + no QR keeps
+   them visually distinct from confirmed reservations in the same list. */
+.dashboard-waitlist-card {
+  background-color: transparent;
+  border: 1px dashed var(--color-outline-variant);
+  box-shadow: none;
+}
+
+.dashboard-waitlist-tag {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-outline-variant);
+  color: var(--color-on-surface-variant);
+  font-family: var(--font-sans);
+  font-size: var(--text-label-caps-size);
+  font-weight: var(--text-label-caps-weight);
+  letter-spacing: var(--text-label-caps-tracking);
+  text-transform: uppercase;
+  white-space: nowrap;
+}

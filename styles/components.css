@@ -356,6 +356,18 @@
   border: 2px solid var(--color-surface);
 }
 
+/* Avatar menu variant: a plain div, not a <details> — panel visibility is
+   hover/focus-driven (not click-toggled), since clicking the trigger itself
+   navigates to the Dashboard instead. */
+.nav-dropdown-hover .nav-dropdown-panel {
+  display: none;
+}
+
+.nav-dropdown-hover:hover .nav-dropdown-panel,
+.nav-dropdown-hover:focus-within .nav-dropdown-panel {
+  display: flex;
+}
+
 .nav-dropdown-panel {
   position: absolute;
   top: calc(100% + var(--space-1));

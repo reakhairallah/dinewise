@@ -49,6 +49,13 @@ const Pricing = {
     return Reservations.countForGuest(guestId) >= MEMBERSHIP_QUALIFYING_PRIOR_COUNT;
   },
 
+  // How many more reservations this guest needs before qualifiesForMembership
+  // turns true — 0 once already qualified. Exposed so callers (Dashboard's
+  // status badge) never have to know or duplicate the threshold themselves.
+  remainingForMembership(guestId) {
+    return Math.max(0, MEMBERSHIP_QUALIFYING_PRIOR_COUNT - Reservations.countForGuest(guestId));
+  },
+
   // Strict pipeline order per CLAUDE.md: base price -> peak/off-peak
   // multiplier -> coupon/membership discount (only if a valid code is
   // entered) -> final total. Bill-split-across-accepted-invitees is the

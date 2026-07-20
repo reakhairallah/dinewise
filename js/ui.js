@@ -48,6 +48,16 @@ const hasProfileSignal = (guest) => Boolean(
   guest?.favoriteCuisines?.length || guest?.dietaryPreferences?.length || guest?.allergyTags?.length,
 );
 
+// CLAUDE.md's booking cap — max active reservations per guest. Shared by
+// Dashboard's active-bookings ring and Restaurant View's Book Now gate, so
+// both read the same limit off the same count.
+const ACTIVE_BOOKINGS_CAP = 3;
+
+const getActiveReservationCount = (guestId) => {
+  const now = new Date();
+  return Reservations.listForGuest(guestId).filter((reservation) => new Date(reservation.dateTime) > now).length;
+};
+
 // Local (not UTC) 'YYYY-MM-DD', matching what a <input type="date"> reads/writes.
 const toDateInputValue = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
@@ -108,6 +118,7 @@ const UI = {
     this.Explore.init();
     this.RestaurantView.init();
     this.BookNow.init();
+    this.Dashboard.init();
     this.Router.routeInitial();
   },
 
@@ -204,6 +215,16 @@ const UI = {
       this.avatarInitials = document.getElementById('nav-avatar-initials');
       this.renderProfile();
       document.getElementById('nav-logout')?.addEventListener('click', () => UI.Router.logout());
+
+      // Panel opens on hover (see .nav-dropdown-hover in components.css) —
+      // clicking the avatar itself, or the "Profile" item inside the panel,
+      // both go straight to the Dashboard rather than just toggling a menu.
+      document.getElementById('nav-avatar-btn')?.addEventListener('click', () => UI.Dashboard.open());
+      document.getElementById('nav-dropdown-profile')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        UI.Dashboard.open();
+      });
+
       closeOnOutsideClick('.nav-dropdown');
     },
 
@@ -407,17 +428,32 @@ const UI = {
       this.rating = document.getElementById('restaurant-view-rating');
       this.badges = document.getElementById('restaurant-view-badges');
       this.menu = document.getElementById('restaurant-view-menu');
+      this.bookingCapMessage = document.getElementById('restaurant-view-booking-cap-message');
 
       document.getElementById('restaurant-view-close')?.addEventListener('click', () => this.close());
-      document.getElementById('restaurant-view-book')?.addEventListener('click', () => {
-        if (!this.currentRestaurant) return;
-        this.close();
-        UI.BookNow.open(this.currentRestaurant);
-      });
+      document.getElementById('restaurant-view-book')?.addEventListener('click', () => this.handleBookClick());
+    },
+
+    // Counts active reservations before ever navigating to Book Now — a
+    // guest already at the cap gets stopped here, not partway through the
+    // booking flow at Confirm.
+    handleBookClick() {
+      if (!this.currentRestaurant) return;
+
+      const guest = Guest.get();
+      if (guest && getActiveReservationCount(guest.id) >= ACTIVE_BOOKINGS_CAP) {
+        this.bookingCapMessage.hidden = false;
+        this.bookingCapMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      this.close();
+      UI.BookNow.open(this.currentRestaurant);
     },
 
     open(restaurant) {
       this.currentRestaurant = restaurant;
+      this.bookingCapMessage.hidden = true;
 
       this.photo.src = restaurant.photoUrl;
       this.photo.alt = restaurant.title;
@@ -1063,10 +1099,185 @@ const UI = {
         this.confirmStatus.innerHTML = '<p class="text-body-md">Booking confirmed!</p>';
 
         setTimeout(() => {
-          console.log('Would redirect to Dashboard — Dashboard screen not built yet.');
-          UI.Router.showScreen('screen-dashboard');
+          UI.Dashboard.open();
         }, 800);
       }, 800);
+    },
+  },
+
+  /* ----- Dashboard screen (reached from Explore's avatar menu, or after a
+     Book Now confirmation). Only the Profile section exists so far — the
+     notification center and reservations list are separate work. ----- */
+  Dashboard: {
+    init() {
+      this.form = document.getElementById('dashboard-profile-form');
+      this.fields = {
+        name: document.getElementById('dashboard-field-name'),
+        email: document.getElementById('dashboard-field-email'),
+        phone: document.getElementById('dashboard-field-phone'),
+      };
+      this.saveStatus = document.getElementById('dashboard-save-status');
+      this.activeRing = document.getElementById('dashboard-active-ring');
+      this.membershipBadge = document.getElementById('dashboard-membership-badge');
+      this.reservationsList = document.getElementById('dashboard-reservations-list');
+
+      document.getElementById('dashboard-back')?.addEventListener('click', () => UI.Router.showScreen('screen-explore'));
+      document.getElementById('dashboard-logout')?.addEventListener('click', () => UI.Router.logout());
+      this.form.addEventListener('submit', (event) => this.handleSubmit(event));
+    },
+
+    open() {
+      this.prefill();
+      this.renderStatus();
+      this.renderReservations();
+      UI.Router.showScreen('screen-dashboard');
+    },
+
+    prefill() {
+      const guest = Guest.get();
+      if (!guest) return;
+
+      this.saveStatus.hidden = true;
+      this.fields.name.value = guest.name ?? '';
+      this.fields.email.value = guest.email ?? '';
+      this.fields.phone.value = guest.phone ?? '';
+      setCheckedValues(this.form, 'favoriteCuisines', guest.favoriteCuisines);
+      setCheckedValues(this.form, 'dietaryPreferences', guest.dietaryPreferences);
+      setCheckedValues(this.form, 'allergyTags', guest.allergyTags);
+    },
+
+    // Same Guest.save() persist path Signup uses — a partial update here
+    // never clobbers fields this form doesn't touch.
+    handleSubmit(event) {
+      event.preventDefault();
+
+      Guest.save({
+        name: this.fields.name.value.trim(),
+        email: this.fields.email.value.trim(),
+        phone: this.fields.phone.value.trim(),
+        favoriteCuisines: getCheckedValues(this.form, 'favoriteCuisines'),
+        dietaryPreferences: getCheckedValues(this.form, 'dietaryPreferences'),
+        allergyTags: getCheckedValues(this.form, 'allergyTags'),
+      });
+
+      UI.Nav.renderProfile();
+      this.saveStatus.hidden = false;
+    },
+
+    // Two independent reads, not one combined stat: active count (future
+    // dateTime) drifts from total-ever count (membership) as time passes and
+    // old reservations age out of "active" without ever being removed.
+    renderStatus() {
+      const guest = Guest.get();
+      if (!guest) return;
+
+      this.renderActiveRing(getActiveReservationCount(guest.id));
+      this.renderMembershipBadge(guest.id);
+    },
+
+    renderActiveRing(activeCount) {
+      const capped = Math.min(activeCount, ACTIVE_BOOKINGS_CAP);
+      const radius = 42;
+      const circumference = 2 * Math.PI * radius;
+      const dashOffset = circumference * (1 - capped / ACTIVE_BOOKINGS_CAP);
+
+      this.activeRing.innerHTML = `
+        <svg class="dashboard-ring-svg" viewBox="0 0 100 100" width="96" height="96" role="img" aria-label="${capped} of ${ACTIVE_BOOKINGS_CAP} active bookings">
+          <circle class="dashboard-ring-track" cx="50" cy="50" r="${radius}" />
+          <circle class="dashboard-ring-fill" cx="50" cy="50" r="${radius}" stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}" />
+        </svg>
+        <div class="dashboard-ring-center">
+          <span class="dashboard-ring-value">${capped}/${ACTIVE_BOOKINGS_CAP}</span>
+          <span class="dashboard-ring-label">Active Bookings</span>
+        </div>
+      `;
+    },
+
+    // Membership rule itself lives in Pricing (single source of truth) —
+    // this only reads it and picks a message, never recomputes the threshold.
+    renderMembershipBadge(guestId) {
+      const isMember = Pricing.qualifiesForMembership(guestId);
+      this.membershipBadge.classList.toggle('is-member', isMember);
+
+      if (isMember) {
+        this.membershipBadge.textContent = '★ DineWise Member';
+        return;
+      }
+
+      const remaining = Pricing.remainingForMembership(guestId);
+      this.membershipBadge.textContent = remaining === 1
+        ? '1 more booking unlocks membership'
+        : `${remaining} more bookings unlock membership`;
+    },
+
+    // Confirmed reservations (Reservations.listForGuest) and this guest's
+    // waitlist entries (no separate screen for those per CLAUDE.md) rendered
+    // together as one chronological list, distinguished by card styling —
+    // not two separate lists — since both represent "things this guest is
+    // waiting on a table for."
+    renderReservations() {
+      const guest = Guest.get();
+      if (!guest) return;
+
+      const reservations = Reservations.listForGuest(guest.id)
+        .map((reservation) => ({ kind: 'reservation', dateTime: reservation.dateTime, data: reservation }));
+      const waitlistEntries = Waitlist.list()
+        .filter((entry) => entry.guestId === guest.id)
+        .map((entry) => ({ kind: 'waitlist', dateTime: entry.dateTime, data: entry }));
+
+      const items = [...reservations, ...waitlistEntries].sort((a, b) => a.dateTime.localeCompare(b.dateTime));
+
+      if (!items.length) {
+        this.reservationsList.innerHTML = '<p class="text-body-md dashboard-placeholder">No reservations yet — book a table from Explore.</p>';
+        return;
+      }
+
+      this.reservationsList.innerHTML = items
+        .map((item) => (item.kind === 'reservation' ? this.renderReservationCard(item.data) : this.renderWaitlistCard(item.data)))
+        .join('');
+    },
+
+    renderReservationCard(reservation) {
+      const restaurant = Restaurants.get(reservation.restaurantId);
+      const pendingCount = reservation.invitees.filter((invitee) => invitee.rsvpStatus === 'pending').length;
+
+      return `
+        <article class="dashboard-reservation-card">
+          <div class="dashboard-reservation-info">
+            <p class="card-title">${restaurant?.title ?? 'Restaurant no longer available'}</p>
+            <p class="text-body-md dashboard-reservation-meta">
+              ${this.formatDateTime(reservation.dateTime)} · Party of ${reservation.partySize}
+            </p>
+            ${pendingCount > 0 ? `<p class="text-body-md dashboard-reservation-note">Waiting on ${pendingCount} RSVP${pendingCount > 1 ? 's' : ''}.</p>` : ''}
+          </div>
+          <div class="dashboard-reservation-qr">${QR.renderSVG(reservation.id)}</div>
+        </article>
+      `;
+    },
+
+    // No QR (no table was ever reserved) and a dashed border instead of the
+    // solid card look, per CLAUDE.md's waitlist entry shape — status is
+    // always 'waiting', there's no 'ready' state to branch on yet.
+    renderWaitlistCard(entry) {
+      const restaurant = Restaurants.get(entry.restaurantId);
+
+      return `
+        <article class="dashboard-reservation-card dashboard-waitlist-card">
+          <div class="dashboard-reservation-info">
+            <p class="card-title">${restaurant?.title ?? 'Restaurant no longer available'}</p>
+            <p class="text-body-md dashboard-reservation-meta">
+              ${this.formatDateTime(entry.dateTime)} · Party of ${entry.partySize}
+            </p>
+          </div>
+          <span class="dashboard-waitlist-tag">Waiting</span>
+        </article>
+      `;
+    },
+
+    formatDateTime(dateTime) {
+      const [datePart, time] = dateTime.split('T');
+      const dateLabel = new Date(datePart).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+      return `${dateLabel} · ${formatTime12h(time)}`;
     },
   },
 };
