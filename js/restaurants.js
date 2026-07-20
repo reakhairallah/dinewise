@@ -1,25 +1,5 @@
 const RESTAURANTS_KEY = 'dinewise_restaurants_v1';
 
-// '17:30' -> '5:30 PM'. Single source of truth for hours display — restaurant
-// records only store openTime/closeTime, never a hand-written hours string
-// that could drift out of sync with them.
-const formatTime12h = (time24) => {
-  const [hourStr, minute] = time24.split(':');
-  const hour = Number(hourStr);
-  const period = hour >= 12 ? 'PM' : 'AM';
-  const hour12 = ((hour + 11) % 12) + 1;
-  return `${hour12}:${minute} ${period}`;
-};
-
-// Shared by anything that needs to do arithmetic on 'HH:MM' strings
-// (reservation time-slot generation here, Pricing's peak-window math).
-const timeToMinutes = (time) => {
-  const [hour, minute] = time.split(':').map(Number);
-  return hour * 60 + minute;
-};
-
-const minutesToTime = (minutes) => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
-
 // Spacing between bookable slots, and how long before closing the last one
 // can start — both exist so two reservations can never be seated too close
 // together to turn the table over, and nobody's seated right at closing.

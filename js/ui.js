@@ -1,19 +1,8 @@
 /* =========================================================
-   Shared DOM helpers — used by more than one UI sub-module below.
+   UI-only helpers not generic enough for helper.js (guest-shaped or
+   tightly coupled to one caller) — see helper.js for the shared DOM/format
+   helpers used across multiple modules or files.
    ========================================================= */
-const renderBadges = (values, chipClass = '') => values
-  .map((value) => `<span class="chip ${chipClass}">${value}</span>`)
-  .join('');
-
-const setCheckedValues = (root, name, values = []) => {
-  root.querySelectorAll(`input[name="${name}"]`).forEach((input) => {
-    input.checked = values.includes(input.value);
-  });
-};
-
-const getCheckedValues = (root, name) => [...root.querySelectorAll(`input[name="${name}"]:checked`)]
-  .map((input) => input.value);
-
 const getCheckedValue = (root, name) => {
   const checked = root.querySelector(`input[name="${name}"]:checked`);
   return checked ? checked.value : null;
@@ -48,30 +37,10 @@ const hasProfileSignal = (guest) => Boolean(
   guest?.favoriteCuisines?.length || guest?.dietaryPreferences?.length || guest?.allergyTags?.length,
 );
 
-// CLAUDE.md's booking cap — max active reservations per guest. Shared by
-// Dashboard's active-bookings ring and Restaurant View's Book Now gate, so
-// both read the same limit off the same count.
-const ACTIVE_BOOKINGS_CAP = 3;
-
-const getActiveReservationCount = (guestId) => {
-  const now = new Date();
-  return Reservations.listForGuest(guestId).filter((reservation) => new Date(reservation.dateTime) > now).length;
-};
-
-// Local (not UTC) 'YYYY-MM-DD', matching what a <input type="date"> reads/writes.
-const toDateInputValue = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
-// Closes any open element matching `selector` (a <details>) when a click lands
-// outside it. Returns the matched elements so callers can reuse the NodeList.
-const closeOnOutsideClick = (selector) => {
-  const elements = document.querySelectorAll(selector);
-  document.addEventListener('click', (event) => {
-    elements.forEach((element) => {
-      if (element.open && !element.contains(event.target)) element.removeAttribute('open');
-    });
-  });
-  return elements;
-};
+// A restaurant referenced by an old reservation/waitlist entry could in
+// principle no longer exist (deleted from Admin) — falls back to a fixed
+// label rather than showing a blank title.
+const getRestaurantName = (restaurantId) => Restaurants.get(restaurantId)?.title ?? 'Restaurant no longer available';
 
 /* =========================================================
    Guest profile persistence — the one save path for the whole app. Signup
@@ -1015,8 +984,6 @@ const UI = {
       const combinedTotal = finalTotal + preOrderTotal;
       const shares = this.getBillSplitShares(combinedTotal);
 
-      const dateLabel = new Date(dateTime).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-
       const priceRows = [
         `<li><span>Base price (${partySize} × $${this.restaurant.pricing.basePrice.toFixed(2)})</span><span>$${basePrice.toFixed(2)}</span></li>`,
         `<li><span>${isPeak ? 'Peak' : 'Off-Peak'} adjustment</span><span>${peakAdjustment >= 0 ? '+' : '−'}$${Math.abs(peakAdjustment).toFixed(2)}</span></li>`,
@@ -1028,7 +995,7 @@ const UI = {
       this.summaryContent.innerHTML = `
         <div class="book-now-ticket">
           <p class="book-now-ticket-restaurant">${this.restaurant.title}</p>
-          <p class="text-body-md book-now-ticket-meta">${dateLabel} · ${formatTime12h(this.selectedTime)}</p>
+          <p class="text-body-md book-now-ticket-meta">${formatReservationDateTime(dateTime)}</p>
           <p class="text-body-md book-now-ticket-meta">Party of ${partySize} · Table ${table.id.slice(0, 8)} (Seats ${table.capacity})</p>
 
           <div class="book-now-ticket-block">
@@ -1238,15 +1205,14 @@ const UI = {
     },
 
     renderReservationCard(reservation) {
-      const restaurant = Restaurants.get(reservation.restaurantId);
       const pendingCount = reservation.invitees.filter((invitee) => invitee.rsvpStatus === 'pending').length;
 
       return `
         <article class="dashboard-reservation-card">
           <div class="dashboard-reservation-info">
-            <p class="card-title">${restaurant?.title ?? 'Restaurant no longer available'}</p>
+            <p class="card-title">${getRestaurantName(reservation.restaurantId)}</p>
             <p class="text-body-md dashboard-reservation-meta">
-              ${this.formatDateTime(reservation.dateTime)} · Party of ${reservation.partySize}
+              ${formatReservationDateTime(reservation.dateTime)} · Party of ${reservation.partySize}
             </p>
             ${pendingCount > 0 ? `<p class="text-body-md dashboard-reservation-note">Waiting on ${pendingCount} RSVP${pendingCount > 1 ? 's' : ''}.</p>` : ''}
           </div>
@@ -1259,25 +1225,17 @@ const UI = {
     // solid card look, per CLAUDE.md's waitlist entry shape — status is
     // always 'waiting', there's no 'ready' state to branch on yet.
     renderWaitlistCard(entry) {
-      const restaurant = Restaurants.get(entry.restaurantId);
-
       return `
         <article class="dashboard-reservation-card dashboard-waitlist-card">
           <div class="dashboard-reservation-info">
-            <p class="card-title">${restaurant?.title ?? 'Restaurant no longer available'}</p>
+            <p class="card-title">${getRestaurantName(entry.restaurantId)}</p>
             <p class="text-body-md dashboard-reservation-meta">
-              ${this.formatDateTime(entry.dateTime)} · Party of ${entry.partySize}
+              ${formatReservationDateTime(entry.dateTime)} · Party of ${entry.partySize}
             </p>
           </div>
           <span class="dashboard-waitlist-tag">Waiting</span>
         </article>
       `;
-    },
-
-    formatDateTime(dateTime) {
-      const [datePart, time] = dateTime.split('T');
-      const dateLabel = new Date(datePart).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
-      return `${dateLabel} · ${formatTime12h(time)}`;
     },
   },
 };
