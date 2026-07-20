@@ -126,6 +126,13 @@
   --shadow-card: 0 8px 20px rgba(0, 0, 0, 0.4);
   --border-ghost: 1px solid rgb(197 160 89 / 30%);
   --blur-nav: 20px;
+
+  /* AI-flavored accent (Explore's Smart Match / recommendation treatment) */
+  --color-primary-rgb: 233 193 118;
+  --gradient-ai: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  --shadow-glow-ai: 0 0 0 1px rgb(var(--color-primary-rgb) / 40%), 0 0 18px rgb(var(--color-primary-rgb) / 35%);
+  --shadow-glow-ai-panel: 0 0 28px rgb(var(--color-primary-rgb) / 22%);
+  --shadow-glow-ai-card: 0 0 24px rgb(var(--color-primary-rgb) / 30%);
 }
 
 /* =========================================================

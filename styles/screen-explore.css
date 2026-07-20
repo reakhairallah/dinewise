@@ -66,10 +66,10 @@ button.filter-chip-summary:disabled {
 /* AI-flavored Smart Match filter chip — gradient glow + a pulsing sparkle
    badge distinguish it from the plain Filters chip. */
 .filter-chip-ai[open] > .filter-chip-summary {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  background: var(--gradient-ai);
   border-color: var(--color-primary);
   color: var(--color-on-primary);
-  box-shadow: 0 0 0 1px rgb(233 193 118 / 40%), 0 0 18px rgb(233 193 118 / 35%);
+  box-shadow: var(--shadow-glow-ai);
 }
 
 .filter-chip-ai[open] > .filter-chip-summary::after {
@@ -87,10 +87,10 @@ button.filter-chip-summary:disabled {
    always-on since it's a one-shot action, not a togglable filter. */
 .filter-action-ai {
   position: relative;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  background: var(--gradient-ai);
   border-color: var(--color-primary);
   color: var(--color-on-primary);
-  box-shadow: 0 0 0 1px rgb(233 193 118 / 40%), 0 0 18px rgb(233 193 118 / 35%);
+  box-shadow: var(--shadow-glow-ai);
 }
 
 .filter-action-ai::after {
@@ -111,7 +111,7 @@ button.filter-chip-summary:disabled {
     linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   background-origin: border-box;
   background-clip: padding-box, border-box;
-  box-shadow: var(--shadow-card), 0 0 28px rgb(233 193 118 / 22%);
+  box-shadow: var(--shadow-card), var(--shadow-glow-ai-panel);
 }
 
 @keyframes sparkle-pulse {
@@ -149,7 +149,7 @@ button.filter-chip-summary:disabled {
   position: relative;
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
-  box-shadow: var(--shadow-card), 0 0 24px rgb(233 193 118 / 30%);
+  box-shadow: var(--shadow-card), var(--shadow-glow-ai-card);
 }
 
 .card-recommended-badge {
@@ -159,7 +159,7 @@ button.filter-chip-summary:disabled {
   z-index: 1;
   padding: 4px var(--space-2);
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  background: var(--gradient-ai);
   color: var(--color-on-primary);
   font-family: var(--font-sans);
   font-size: var(--text-label-caps-size);
