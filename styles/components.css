@@ -221,6 +221,14 @@
 .nav-glass {
   position: sticky;
   top: 0;
+  /* Explicit, not left to default stacking order: a sticky element with
+     z-index:auto only wins against later-in-DOM positioned content by tree
+     order, which broke the first time any positioned descendant (e.g. the
+     recommended-card badge's containing card) appeared after it in the
+     markup. This value must stay above any in-page overlay z-index (nav
+     dropdown panel: 20, quick-add panel: 10) so the header can never be
+     covered by page content while scrolling. */
+  z-index: 100;
   background-color: rgb(18 20 18 / 70%);
   backdrop-filter: blur(var(--blur-nav));
   -webkit-backdrop-filter: blur(var(--blur-nav));
@@ -243,12 +251,6 @@
   align-items: center;
   gap: var(--space-1);
   justify-self: start;
-}
-
-.nav-logo-mark {
-  height: 60px;
-  width: auto;
-  flex-shrink: 0;
 }
 
 .nav-wordmark {
@@ -305,15 +307,6 @@
   position: relative;
 }
 
-.nav-dropdown-summary,
-.nav-dropdown > summary {
-  list-style: none;
-}
-
-.nav-dropdown > summary::-webkit-details-marker {
-  display: none;
-}
-
 .nav-icon-btn {
   position: relative;
   display: flex;
@@ -345,34 +338,57 @@
   background-color: var(--color-primary-fixed);
 }
 
-.nav-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  background-color: var(--color-primary);
-  border: 2px solid var(--color-surface);
-}
-
 /* Avatar menu variant: a plain div, not a <details> — panel visibility is
    hover/focus-driven (not click-toggled), since clicking the trigger itself
-   navigates to the Dashboard instead. */
-.nav-dropdown-hover .nav-dropdown-panel {
-  display: none;
+   navigates to the Dashboard instead. The show delay is timed in JS (see
+   Nav.init in ui.js) rather than a CSS transition-delay: once the panel's
+   own pointer-events flips to none, it stops being hit-testable, so a
+   pure-CSS :hover can never re-trigger itself from that same cursor
+   position — a real deadlock, not just a Playwright artifact. Keyboard
+   focus still reveals it instantly via :focus-within, no delay.
+
+   The mouseenter/mouseleave that drive the JS timer are bound to this same
+   .nav-dropdown-hover element (icon + panel together), not the icon alone —
+   but the icon is only 40px wide while the panel (below it) is --nav-panel-width
+   wide and right-aligned, so a straight cursor path from the icon toward an
+   item in the panel is diagonal and exits the icon's own narrow box before
+   it ever reaches the panel. This invisible bridge fills that exact gap,
+   spanning the panel's full width, so the cursor stays inside
+   .nav-dropdown-hover's hit area the entire way from icon to panel. */
+.nav-dropdown-hover {
+  --nav-panel-width: 200px;
 }
 
-.nav-dropdown-hover:hover .nav-dropdown-panel,
-.nav-dropdown-hover:focus-within .nav-dropdown-panel {
+.nav-dropdown-hover::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: var(--nav-panel-width);
+  height: var(--space-1);
+}
+
+.nav-dropdown-hover .nav-dropdown-panel {
   display: flex;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.15s ease, visibility 0s linear 0.15s;
+}
+
+.nav-dropdown-hover.is-open .nav-dropdown-panel,
+.nav-dropdown-hover:focus-within .nav-dropdown-panel {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.15s ease;
 }
 
 .nav-dropdown-panel {
   position: absolute;
   top: calc(100% + var(--space-1));
   right: 0;
-  min-width: 200px;
+  min-width: var(--nav-panel-width, 200px);
   display: flex;
   flex-direction: column;
   background-color: var(--color-surface-container);
@@ -381,12 +397,6 @@
   box-shadow: var(--shadow-card);
   padding: var(--space-1);
   z-index: 20;
-}
-
-.nav-dropdown-empty {
-  padding: var(--space-2);
-  color: var(--color-on-surface-variant);
-  white-space: nowrap;
 }
 
 .nav-dropdown-item {

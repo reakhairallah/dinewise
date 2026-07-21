@@ -7,16 +7,24 @@
   gap: var(--space-5);
 }
 
-.explore-intro {
-  max-width: 640px;
+/* Hero row — intro heading on one side, the "Find my pick, wisely" chip on
+   the other. Stacks on narrow viewports. */
+.explore-hero-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
 }
 
-/* Filter row — 3 chip-triggered filters, each a <details>/<summary> so the
-   dropdown opens/closes with no JS. Row scrolls horizontally if it can't fit. */
-.filter-row {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: nowrap;
+@media (max-width: 700px) {
+  .explore-hero-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.explore-intro {
+  max-width: 640px;
 }
 
 .filter-chip {
@@ -51,7 +59,9 @@ button.filter-chip-summary:disabled {
   position: absolute;
   top: calc(100% + var(--space-1));
   left: 0;
-  z-index: 20;
+  /* Below .nav-dropdown-panel's z-index (components.css) — this only needs
+     to clear the grid content behind it, not compete with global nav chrome. */
+  z-index: 10;
   min-width: 280px;
   display: flex;
   flex-direction: column;
@@ -63,28 +73,8 @@ button.filter-chip-summary:disabled {
   padding: var(--space-3);
 }
 
-/* AI-flavored Smart Match filter chip — gradient glow + a pulsing sparkle
-   badge distinguish it from the plain Filters chip. */
-.filter-chip-ai[open] > .filter-chip-summary {
-  background: var(--gradient-ai);
-  border-color: var(--color-primary);
-  color: var(--color-on-primary);
-  box-shadow: var(--shadow-glow-ai);
-}
-
-.filter-chip-ai[open] > .filter-chip-summary::after {
-  content: '✦';
-  position: absolute;
-  top: -7px;
-  right: -6px;
-  font-size: 11px;
-  line-height: 1;
-  color: var(--color-primary-fixed);
-  animation: sparkle-pulse 1.6s ease-in-out infinite;
-}
-
-/* Smart-pick action button — same AI gradient treatment as Smart Match, but
-   always-on since it's a one-shot action, not a togglable filter. */
+/* Smart-pick action button — AI gradient treatment, always-on since it's a
+   one-shot action, not a togglable filter. */
 .filter-action-ai {
   position: relative;
   background: var(--gradient-ai);
@@ -104,14 +94,31 @@ button.filter-chip-summary:disabled {
   animation: sparkle-pulse 1.6s ease-in-out infinite;
 }
 
-.filter-chip-ai .filter-chip-panel {
-  border: 1px solid transparent;
-  background-image:
-    linear-gradient(var(--color-surface-container), var(--color-surface-container)),
-    linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-  background-origin: border-box;
-  background-clip: padding-box, border-box;
-  box-shadow: var(--shadow-card), var(--shadow-glow-ai-panel);
+/* Only shown once a recommendation sort is active (toggled in ui.js) —
+   dismisses back to normal order without toggling the summary's own
+   <details> open state. */
+.smart-pick-dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgb(0 0 0 / 15%);
+  color: var(--color-on-primary);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.smart-pick-dismiss[hidden] {
+  display: none;
+}
+
+.smart-pick-dismiss:hover {
+  background: rgb(0 0 0 / 30%);
 }
 
 @keyframes sparkle-pulse {
@@ -125,12 +132,11 @@ button.filter-chip-summary:disabled {
   }
 }
 
-.smart-match-submit {
-  align-self: flex-start;
-}
-
 /* Restaurant grid + cards (rendered from Restaurants.list() via UI.renderExplore) */
 .restaurant-grid {
+  /* Offsets the "The Table" anchor jump so the grid's top row clears the
+     sticky nav instead of landing underneath it. */
+  scroll-margin-top: 96px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--gutter);
@@ -153,10 +159,15 @@ button.filter-chip-summary:disabled {
 }
 
 .card-recommended-badge {
+  /* No z-index needed: positioned descendants already paint above the
+     card's static in-flow content (the image) — an explicit value here
+     doesn't just stack it within the card, it out-ranks every z-index:auto
+     element on the page (like the sticky nav) at the root stacking context,
+     since .card.is-recommended (position:relative, z-index:auto) doesn't
+     contain it into its own local stacking context. */
   position: absolute;
   top: var(--space-2);
   left: var(--space-2);
-  z-index: 1;
   padding: 4px var(--space-2);
   border-radius: var(--radius-full);
   background: var(--gradient-ai);

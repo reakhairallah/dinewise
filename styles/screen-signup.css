@@ -2,35 +2,80 @@
    Screen 1 — Sign Up / Role Picker
    ========================================================= */
 .signup-layout {
-  max-width: 640px;
+  max-width: 1040px;
   padding-block: var(--space-8);
-}
-
-.signup-brand {
-  text-align: center;
-  margin-bottom: var(--space-6);
-}
-
-.signup-eyebrow {
-  color: var(--color-primary);
-  margin-bottom: var(--space-1);
-}
-
-.signup-tagline {
-  color: var(--color-on-surface-variant);
-  margin-top: var(--space-2);
 }
 
 .signup-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-6);
 }
 
-#guest-only-fields:not([hidden]) {
+/* Split hero — large serif intro on the left, the profile card on the right. */
+.signup-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .signup-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.signup-hero {
+  display: flex;
+  flex-direction: column;
+}
+
+.signup-eyebrow {
+  color: var(--color-primary);
+  margin-bottom: var(--space-2);
+}
+
+.signup-hero-title {
+  color: var(--color-on-surface);
+}
+
+.signup-tagline {
+  color: var(--color-on-surface-variant);
+  margin-top: var(--space-3);
+}
+
+.signup-profile-card {
+  padding: var(--space-4);
+  cursor: default;
+}
+
+.signup-profile-card:hover {
+  background-color: var(--color-surface-container);
+}
+
+/* Dining Persona — the guest-only chip groups, grouped in one dashed-border
+   module so they read as a distinct, optional block below the required form. */
+.signup-persona {
+  border: 1px dashed var(--color-outline-variant);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.signup-persona:not([hidden]) {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+}
+
+.signup-persona-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.signup-persona-header .field-hint {
+  margin-top: 0;
 }
 
 .form-fieldset {
@@ -91,11 +136,16 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  padding: var(--space-3);
+  padding: var(--space-4);
   border-radius: var(--radius-lg);
   background-color: var(--color-surface-container);
   border: 1px solid var(--color-outline-variant);
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  box-shadow: var(--shadow-card);
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.role-card:hover .role-card-body {
+  transform: translateY(-2px);
 }
 
 .role-card-title {
@@ -127,4 +177,6 @@
 .signup-submit {
   width: 100%;
   margin-top: var(--space-2);
+  padding-block: var(--space-3);
+  font-size: 15px;
 }

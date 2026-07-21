@@ -186,13 +186,33 @@ const UI = {
       document.getElementById('nav-logout')?.addEventListener('click', () => UI.Router.logout());
 
       // Panel opens on hover (see .nav-dropdown-hover in components.css) —
-      // clicking the avatar itself, or the "Profile" item inside the panel,
-      // both go straight to the Dashboard rather than just toggling a menu.
+      // clicking the avatar itself, or an item inside the panel, both go
+      // straight to the Dashboard rather than just toggling a menu. Profile
+      // and Reservations additionally scroll to their section once open.
       document.getElementById('nav-avatar-btn')?.addEventListener('click', () => UI.Dashboard.open());
       document.getElementById('nav-dropdown-profile')?.addEventListener('click', (event) => {
         event.preventDefault();
-        UI.Dashboard.open();
+        UI.Dashboard.open('dashboard-profile');
       });
+      document.getElementById('nav-dropdown-reservations')?.addEventListener('click', (event) => {
+        event.preventDefault();
+        UI.Dashboard.open('dashboard-reservations');
+      });
+
+      // Delay is timed here rather than via CSS transition-delay — see the
+      // comment on .nav-dropdown-hover in components.css for why a pure-CSS
+      // hover delay can deadlock once the panel's own pointer-events flips.
+      const avatarDropdown = document.querySelector('.nav-dropdown-hover');
+      if (avatarDropdown) {
+        let hoverTimer = null;
+        avatarDropdown.addEventListener('mouseenter', () => {
+          hoverTimer = setTimeout(() => avatarDropdown.classList.add('is-open'), 400);
+        });
+        avatarDropdown.addEventListener('mouseleave', () => {
+          clearTimeout(hoverTimer);
+          avatarDropdown.classList.remove('is-open');
+        });
+      }
 
       closeOnOutsideClick('.nav-dropdown');
     },
@@ -270,6 +290,7 @@ const UI = {
     init() {
       this.quickAddChip = document.getElementById('smart-pick-chip');
       this.quickAddPanel = document.getElementById('smart-pick-quickadd');
+      this.dismissButton = document.getElementById('smart-pick-dismiss');
       this.recommendedId = null;
 
       this.render();
@@ -280,6 +301,32 @@ const UI = {
       // behavior as the Smart Match chip — nothing extra to wire up for that.
       document.getElementById('smart-pick-action')?.addEventListener('click', (event) => this.handleActionClick(event));
       document.getElementById('smart-pick-quickadd-submit')?.addEventListener('click', () => this.handleQuickAddSubmit());
+      // preventDefault so clicking it doesn't also trigger the <summary>'s
+      // native click-to-toggle-the-<details> behavior, and stopPropagation
+      // so the bubbled click doesn't also reach the summary's own click
+      // listener (handleActionClick) and immediately re-rank right after
+      // this resets — the guest almost certainly has profile signal by the
+      // time this button is even visible, which is exactly the branch that
+      // would otherwise fire.
+      this.dismissButton?.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.reset();
+      });
+
+      // Dismissing without saving (outside click) leaves any checked boxes
+      // checked in the DOM — this panel only ever shows because the guest
+      // has zero saved tags, so it must not carry a prior, unsaved check
+      // into the next time it's opened.
+      this.quickAddChip?.addEventListener('toggle', () => {
+        if (this.quickAddChip.open) this.resetQuickAddPanel();
+      });
+    },
+
+    resetQuickAddPanel() {
+      this.quickAddPanel?.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+        input.checked = false;
+      });
     },
 
     render(restaurants = Restaurants.list()) {
@@ -295,6 +342,7 @@ const UI = {
     reset() {
       this.recommendedId = null;
       this.quickAddChip?.removeAttribute('open');
+      if (this.dismissButton) this.dismissButton.hidden = true;
       this.render();
     },
 
@@ -314,6 +362,7 @@ const UI = {
     rank(guest) {
       const ranked = [...Restaurants.list()].sort((a, b) => Recommendation.compare(a, b, guest));
       this.recommendedId = ranked[0]?.id ?? null;
+      if (this.dismissButton) this.dismissButton.hidden = !this.recommendedId;
       this.render(ranked);
     },
 
@@ -1093,11 +1142,14 @@ const UI = {
       this.form.addEventListener('submit', (event) => this.handleSubmit(event));
     },
 
-    open() {
+    open(scrollToId) {
       this.prefill();
       this.renderStatus();
       this.renderReservations();
       UI.Router.showScreen('screen-dashboard');
+      if (scrollToId) {
+        document.getElementById(scrollToId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     },
 
     prefill() {
@@ -1128,6 +1180,11 @@ const UI = {
       });
 
       UI.Nav.renderProfile();
+      // The current sort (if any) reflects a snapshot of tags taken when
+      // "Find my pick, wisely" was last clicked — editing tags here makes
+      // that snapshot stale. Reset to normal order rather than re-sorting
+      // live; the guest can re-click for a fresh recommendation.
+      UI.Explore.reset();
       this.saveStatus.hidden = false;
     },
 

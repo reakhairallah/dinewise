@@ -23,36 +23,40 @@
   <section id="screen-signup" class="screen">
     <div class="container signup-layout">
 
-      <header class="signup-brand">
-        <p class="text-label-caps signup-eyebrow">Smart Restaurant Reservations</p>
-        <h1 class="text-display-lg brand-wordmark">DineWise</h1>
-        <p class="text-body-lg signup-tagline">
-          An elite concierge for exclusive dining. Tell us a little about yourself to begin.
-        </p>
-      </header>
-
       <form id="signup-form" class="signup-form">
 
-        <fieldset class="form-fieldset">
-          <legend class="text-headline-sm">Your Profile</legend>
+        <div class="signup-split">
+          <header class="signup-hero">
+            <p class="text-label-caps signup-eyebrow">DineWise · Smart Restaurant Reservations</p>
+            <h1 class="text-display-lg signup-hero-title">Begin Your Journey</h1>
+            <p class="text-body-lg signup-tagline">
+              An elite concierge for exclusive dining. Tell us a little about yourself to begin.
+            </p>
+          </header>
 
-          <div class="field">
-            <label class="field-label" for="field-name">Full Name</label>
-            <input autocomplete="off" class="field-input" type="text" id="field-name" name="name" placeholder="Jordan Ellis" required />
+          <div class="card signup-profile-card">
+            <fieldset class="form-fieldset">
+              <legend class="text-headline-sm">Your Profile</legend>
+
+              <div class="field">
+                <label class="field-label" for="field-name">Full Name</label>
+                <input autocomplete="off" class="field-input" type="text" id="field-name" name="name" placeholder="Jordan Ellis" required />
+              </div>
+
+              <div class="field-row">
+                <div class="field">
+                  <label class="field-label" for="field-email">Email</label>
+                  <input autocomplete="off" class="field-input" type="email" id="field-email" name="email" placeholder="jordan@example.com" required />
+                </div>
+
+                <div class="field">
+                  <label class="field-label" for="field-phone">Phone</label>
+                  <input autocomplete="off" class="field-input" type="tel" id="field-phone" name="phone" placeholder="(555) 123-4567" />
+                </div>
+              </div>
+            </fieldset>
           </div>
-
-          <div class="field-row">
-            <div class="field">
-              <label class="field-label" for="field-email">Email</label>
-              <input autocomplete="off" class="field-input" type="email" id="field-email" name="email" placeholder="jordan@example.com" required />
-            </div>
-
-            <div class="field">
-              <label class="field-label" for="field-phone">Phone</label>
-              <input autocomplete="off" class="field-input" type="tel" id="field-phone" name="phone" placeholder="(555) 123-4567" />
-            </div>
-          </div>
-        </fieldset>
+        </div>
 
         <fieldset class="form-fieldset">
           <legend class="text-headline-sm">Continue As</legend>
@@ -84,9 +88,14 @@
           </p>
         </fieldset>
 
-        <div id="guest-only-fields" hidden>
+        <div id="guest-only-fields" class="signup-persona" hidden>
+          <header class="signup-persona-header">
+            <h2 class="text-headline-sm">Dining Persona</h2>
+            <p class="text-body-md field-hint">Optional — helps us tailor recommendations.</p>
+          </header>
+
           <fieldset class="form-fieldset">
-            <legend class="text-headline-sm">Favorite Cuisines</legend>
+            <legend class="text-label-caps">Favorite Cuisines</legend>
             <p class="text-body-md field-hint">Select as many as you like.</p>
 
             <div class="chip-group">
@@ -118,7 +127,7 @@
           </fieldset>
 
           <fieldset class="form-fieldset">
-            <legend class="text-headline-sm">Dietary Preferences</legend>
+            <legend class="text-label-caps">Dietary Preferences</legend>
             <p class="text-body-md field-hint">Optional — helps us tailor recommendations.</p>
 
             <div class="chip-group">
@@ -142,7 +151,7 @@
           </fieldset>
 
           <fieldset class="form-fieldset">
-            <legend class="text-headline-sm">Allergies &amp; Intolerances</legend>
+            <legend class="text-label-caps">Allergies &amp; Intolerances</legend>
             <p class="text-body-md field-hint">Optional — helps us tailor recommendations.</p>
 
             <div class="chip-group">
@@ -158,7 +167,7 @@
           </fieldset>
         </div>
 
-        <button type="submit" class="btn btn-primary signup-submit">Continue</button>
+        <button type="submit" class="btn btn-primary signup-submit">Complete Profile</button>
 
       </form>
     </div>
@@ -170,38 +179,26 @@
       <div class="container nav-inner">
 
         <div class="nav-brand">
-          <img class="nav-logo-mark" src="assets/dinewise-logo.svg" alt="DineWise" />
+          <span class="text-headline-sm nav-wordmark brand-wordmark">DineWise</span>
         </div>
 
         <nav class="nav-links" aria-label="Primary">
-          <a href="#" class="nav-link is-active">The Table</a>
+          <a href="#restaurant-grid" class="nav-link is-active">The Table</a>
         </nav>
 
         <div class="nav-actions">
 
-          <details class="nav-dropdown">
-            <summary class="nav-icon-btn" aria-label="Notifications">
-              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path d="M12 3a5 5 0 0 0-5 5v3.3c0 .95-.37 1.87-1.03 2.55L5 15h14l-.97-1.15A3.6 3.6 0 0 1 17 11.3V8a5 5 0 0 0-5-5Z" stroke-linejoin="round" stroke-linecap="round" />
-                <path d="M9.5 18a2.5 2.5 0 0 0 5 0" stroke-linecap="round" />
-              </svg>
-              <span class="nav-badge" aria-hidden="true"></span>
-            </summary>
-            <div class="nav-dropdown-panel">
-              <p class="text-body-md nav-dropdown-empty">You're all caught up.</p>
-            </div>
-          </details>
-
-          <!-- Not a <details> like the notifications dropdown above — hover
-               shows this panel (see .nav-dropdown-hover in components.css),
-               and clicking the avatar itself redirects straight into the
-               Dashboard instead of toggling the panel open/closed. -->
+          <!-- Hover shows this panel (see .nav-dropdown-hover in
+               components.css), and clicking the avatar itself redirects
+               straight into the Dashboard instead of toggling the panel
+               open/closed. -->
           <div class="nav-dropdown nav-dropdown-hover">
             <button type="button" id="nav-avatar-btn" class="nav-icon-btn nav-avatar" aria-label="Go to Dashboard">
               <span id="nav-avatar-initials">G</span>
             </button>
             <div class="nav-dropdown-panel">
-              <a href="#" id="nav-dropdown-profile" class="nav-dropdown-item">Profile</a>
+              <a href="#dashboard-profile" id="nav-dropdown-profile" class="nav-dropdown-item">Profile</a>
+              <a href="#dashboard-reservations" id="nav-dropdown-reservations" class="nav-dropdown-item">Reservations</a>
               <button type="button" id="nav-logout" class="nav-dropdown-item nav-dropdown-item-logout">Log Out</button>
             </div>
           </div>
@@ -213,11 +210,11 @@
 
     <div class="container section explore-layout">
 
-      <div class="explore-intro">
-        <h1 class="text-display-lg">The Right Table, Every Time.</h1>
-      </div>
+      <div class="explore-hero-row">
 
-      <div class="filter-row">
+        <div class="explore-intro">
+          <h1 class="text-display-lg">The Right Table, Every Time.</h1>
+        </div>
 
         <details class="filter-chip" id="smart-pick-chip">
           <summary id="smart-pick-action" class="btn btn-primary filter-action-ai filter-chip-summary">
@@ -226,6 +223,7 @@
               <path d="M18.5 14.5c.25 1.15.6 1.9 1.05 2.35.45.45 1.2.8 2.35 1.05-1.15.25-1.9.6-2.35 1.05-.45.45-.8 1.2-1.05 2.35-.25-1.15-.6-1.9-1.05-2.35-.45-.45-1.2-.8-2.35-1.05 1.15-.25 1.9-.6 2.35-1.05.45-.45.8-1.2 1.05-2.35Z" />
             </svg>
             Find my pick, wisely
+            <button type="button" id="smart-pick-dismiss" class="smart-pick-dismiss" aria-label="Dismiss recommendation" hidden>×</button>
           </summary>
 
           <div id="smart-pick-quickadd" class="filter-chip-panel">
@@ -300,74 +298,6 @@
             </div>
 
             <button type="button" id="smart-pick-quickadd-submit" class="btn btn-primary">Save &amp; Find My Pick</button>
-          </div>
-        </details>
-
-        <details class="filter-chip filter-chip-ai">
-          <summary class="chip filter-chip-summary">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">
-              <path d="M12 3c.45 2.55 1.15 4.15 2.1 5.1.95.95 2.55 1.65 5.1 2.1-2.55.45-4.15 1.15-5.1 2.1-.95.95-1.65 2.55-2.1 5.1-.45-2.55-1.15-4.15-2.1-5.1C8.95 11.35 7.35 10.65 4.8 10.2c2.55-.45 4.15-1.15 5.1-2.1C10.85 7.15 11.55 5.55 12 3Z" />
-              <path d="M18.5 14.5c.25 1.15.6 1.9 1.05 2.35.45.45 1.2.8 2.35 1.05-1.15.25-1.9.6-2.35 1.05-.45.45-.8 1.2-1.05 2.35-.25-1.15-.6-1.9-1.05-2.35-.45-.45-1.2-.8-2.35-1.05 1.15-.25 1.9-.6 2.35-1.05.45-.45.8-1.2 1.05-2.35Z" />
-            </svg>
-            Smart Match
-          </summary>
-
-          <div class="filter-chip-panel">
-            <div class="form-fieldset">
-              <p class="field-label">Mood</p>
-              <div class="chip-group">
-                <label class="chip-option">
-                  <input class="chip-input" type="radio" name="smartMood" value="cozy" />
-                  <span class="chip">Cozy</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="radio" name="smartMood" value="lively" />
-                  <span class="chip">Lively</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="radio" name="smartMood" value="romantic" />
-                  <span class="chip">Romantic</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="radio" name="smartMood" value="adventurous" />
-                  <span class="chip">Adventurous</span>
-                </label>
-              </div>
-            </div>
-
-            <div class="form-fieldset">
-              <p class="field-label">Budget</p>
-              <div class="chip-group">
-                <label class="chip-option">
-                  <input class="chip-input" type="radio" name="smartBudget" value="1" />
-                  <span class="chip">$</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="radio" name="smartBudget" value="2" />
-                  <span class="chip">$$</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="radio" name="smartBudget" value="3" />
-                  <span class="chip">$$$</span>
-                </label>
-                <label class="chip-option">
-                  <input class="chip-input" type="radio" name="smartBudget" value="4" />
-                  <span class="chip">$$$$</span>
-                </label>
-              </div>
-            </div>
-
-            <div class="form-fieldset">
-              <label class="field-label" for="smart-distance">Distance</label>
-              <select class="field-input" id="smart-distance" name="smartDistance">
-                <option value="1">Within 1 mile</option>
-                <option value="3">Within 3 miles</option>
-                <option value="5">Within 5 miles</option>
-                <option value="any">Any distance</option>
-              </select>
-            </div>
-
-            <button type="button" class="btn btn-primary smart-match-submit">Find My Table</button>
           </div>
         </details>
 
