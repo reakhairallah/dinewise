@@ -6,21 +6,145 @@
   white-space: nowrap;
 }
 
+/* .nav-inner is a 3-column grid (brand | links | actions) shared with
+   Explore's header, but the Dashboard header only has brand + actions —
+   without an explicit column, actions auto-places into the middle "links"
+   track and reads as centered instead of flush right. */
+.dashboard-header .nav-actions {
+  grid-column: 3;
+}
+
 .dashboard-layout {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  align-items: start;
+  gap: var(--space-6);
+}
+
+@media (max-width: 900px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Thin, persistent — same #dashboard-profile/#dashboard-reservations
+   anchors and native scroll-to-section behavior already used by the
+   Explore avatar-menu's Profile/Reservations items, just always visible
+   here instead of a hover dropdown. */
+.dashboard-sidebar {
+  position: sticky;
+  top: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+@media (max-width: 900px) {
+  .dashboard-sidebar {
+    position: static;
+    flex-direction: row;
+    gap: var(--space-4);
+  }
+}
+
+.dashboard-sidebar-link {
+  padding-block: 4px;
+  padding-left: var(--space-2);
+  border-left: 2px solid transparent;
+  font-family: var(--font-sans);
+  font-size: var(--text-label-caps-size);
+  font-weight: var(--text-label-caps-weight);
+  letter-spacing: var(--text-label-caps-tracking);
+  text-transform: uppercase;
+  color: var(--color-on-surface-variant);
+  text-decoration: none;
+}
+
+.dashboard-sidebar-link.is-active {
+  border-left-color: var(--color-primary);
+  color: var(--color-on-surface);
+}
+
+.dashboard-main {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  min-width: 0;
 }
 
 .dashboard-section {
   scroll-margin-top: 80px;
 }
 
-.dashboard-profile-form {
+/* Title on one side, avatar + membership badge on the other — same
+   row-based pattern as .dashboard-reservations-header's title + booking-cap
+   ring, instead of a stacked/centered arrangement above the form card. */
+.dashboard-profile-header {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--space-4);
-  margin-top: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.dashboard-profile-side {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+/* Same initials-in-circle component as the nav bar's .nav-avatar
+   (Explore's header) — a bit bigger, not a dominant block. */
+.dashboard-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-full);
+  font-size: 22px;
+}
+
+.dashboard-profile-card {
+  width: 100%;
+  padding: var(--space-4);
+  cursor: default;
+}
+
+.dashboard-profile-card:hover {
+  background-color: var(--color-surface-container);
+}
+
+/* Wider now that the side column is slim — spread fields across a 3-column
+   row instead of stacking everything tall in one narrow column.
+   .dashboard-fieldset-full spans all 3 for Basic Info and the actions row;
+   the three chip fieldsets fall one-per-column automatically. */
+.dashboard-profile-form {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+
+.dashboard-fieldset-full {
+  grid-column: 1 / -1;
+}
+
+.field-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+@media (max-width: 700px) {
+  .dashboard-profile-form {
+    grid-template-columns: 1fr;
+  }
+
+  .field-row-3 {
+    grid-template-columns: 1fr;
+  }
 }
 
 .dashboard-profile-actions {
@@ -38,15 +162,17 @@
   margin-top: var(--space-2);
 }
 
-/* Active-count ring and membership badge are deliberately two separate
-   elements, not one combined visual — active reservations (future dateTime)
-   and total-ever reservations (membership) drift apart over time. */
-.dashboard-status-row {
+/* Title on one side, the active-bookings ring on the other. The ring and
+   the membership badge (now over in .dashboard-profile-side) are still two
+   independent elements, not one combined visual — active reservations
+   (future dateTime) and total-ever reservations (membership) drift apart
+   over time. */
+.dashboard-reservations-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
   flex-wrap: wrap;
-  gap: var(--space-5);
-  margin-block: var(--space-4);
 }
 
 .dashboard-ring {
@@ -54,6 +180,27 @@
   width: 96px;
   height: 96px;
   flex-shrink: 0;
+}
+
+/* Enlarged variant for the reservations header — same renderActiveRing()
+   markup/math, just bigger so "X/3 Active Bookings" isn't cramped. SVG has
+   width/height attributes from its viewBox, but CSS size wins over those. */
+.dashboard-ring-lg {
+  width: 140px;
+  height: 140px;
+}
+
+.dashboard-ring-lg .dashboard-ring-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.dashboard-ring-lg .dashboard-ring-value {
+  font-size: 20px;
+}
+
+.dashboard-ring-lg .dashboard-ring-label {
+  font-size: 9px;
 }
 
 .dashboard-ring-svg {
@@ -149,9 +296,25 @@
   margin-top: var(--space-1);
 }
 
+/* A <button>, not a <div> — clicking it opens the read-only reservation
+   receipt (ReservationReceipt in ui.js), so it needs to reset button chrome
+   and signal interactivity instead of looking like static card decoration. */
 .dashboard-reservation-qr {
   flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
   color: var(--color-on-surface);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: opacity 0.15s ease;
+}
+
+.dashboard-reservation-qr:hover,
+.dashboard-reservation-qr:focus-visible {
+  opacity: 0.75;
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .qr-pattern rect {
@@ -178,4 +341,27 @@
   letter-spacing: var(--text-label-caps-tracking);
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+/* Reservation receipt overlay — reuses .restaurant-overlay/-backdrop/-close
+   (screen-restaurant-view.css) for the fixed, centered, dismissible shell;
+   only the panel itself is specific to this screen. Content-height and
+   narrower than Restaurant View's fixed 560px split panel — a receipt is a
+   single scrolling column, not two fixed-height halves. */
+.reservation-receipt-panel {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-4) var(--space-4);
+  background-color: var(--color-surface-container);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.reservation-receipt-body > .book-now-ticket-block:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }

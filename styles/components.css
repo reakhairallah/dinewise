@@ -49,6 +49,34 @@
 }
 
 /* =========================================================
+   Small dismiss "×" — shared shape/size/background (invitee removal in
+   Book Now, the recommendation-reset "×" in Explore's icon slot). Resting
+   *color* is the one thing left contextual: Book Now's sits on a dark list
+   row (on-surface-variant reads fine there), Explore's sits inside a light
+   gradient pill (needs on-primary for contrast) — a literal shared color
+   would make one of the two illegible. Everything else — size, shape,
+   background, hover — is identical between the two.
+   ========================================================= */
+.icon-dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: none;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.icon-dismiss:hover {
+  color: var(--color-error);
+}
+
+/* =========================================================
    Cards
    ========================================================= */
 .card {

@@ -218,12 +218,15 @@
 
         <details class="filter-chip" id="smart-pick-chip">
           <summary id="smart-pick-action" class="btn btn-primary filter-action-ai filter-chip-summary">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true">
-              <path d="M12 3c.45 2.55 1.15 4.15 2.1 5.1.95.95 2.55 1.65 5.1 2.1-2.55.45-4.15 1.15-5.1 2.1-.95.95-1.65 2.55-2.1 5.1-.45-2.55-1.15-4.15-2.1-5.1C8.95 11.35 7.35 10.65 4.8 10.2c2.55-.45 4.15-1.15 5.1-2.1C10.85 7.15 11.55 5.55 12 3Z" />
-              <path d="M18.5 14.5c.25 1.15.6 1.9 1.05 2.35.45.45 1.2.8 2.35 1.05-1.15.25-1.9.6-2.35 1.05-.45.45-.8 1.2-1.05 2.35-.25-1.15-.6-1.9-1.05-2.35-.45-.45-1.2-.8-2.35-1.05 1.15-.25 1.9-.6 2.35-1.05.45-.45.8-1.2 1.05-2.35Z" />
-            </svg>
+            <span id="smart-pick-icon" class="smart-pick-icon-slot" data-state="default" aria-hidden="true">
+              <svg class="smart-pick-icon-sparkle" viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
+                <path d="M12 3c.45 2.55 1.15 4.15 2.1 5.1.95.95 2.55 1.65 5.1 2.1-2.55.45-4.15 1.15-5.1 2.1-.95.95-1.65 2.55-2.1 5.1-.45-2.55-1.15-4.15-2.1-5.1C8.95 11.35 7.35 10.65 4.8 10.2c2.55-.45 4.15-1.15 5.1-2.1C10.85 7.15 11.55 5.55 12 3Z" />
+                <path d="M18.5 14.5c.25 1.15.6 1.9 1.05 2.35.45.45 1.2.8 2.35 1.05-1.15.25-1.9.6-2.35 1.05-.45.45-.8 1.2-1.05 2.35-.25-1.15-.6-1.9-1.05-2.35-.45-.45-1.2-.8-2.35-1.05 1.15-.25 1.9-.6 2.35-1.05.45-.45.8-1.2 1.05-2.35Z" />
+              </svg>
+              <span class="smart-pick-icon-spinner" aria-hidden="true"></span>
+              <span class="smart-pick-icon-dismiss icon-dismiss" aria-hidden="true">×</span>
+            </span>
             Find my pick, wisely
-            <button type="button" id="smart-pick-dismiss" class="smart-pick-dismiss" aria-label="Dismiss recommendation" hidden>×</button>
           </summary>
 
           <div id="smart-pick-quickadd" class="filter-chip-panel">
@@ -320,31 +323,42 @@
         </svg>
       </button>
 
-      <img id="restaurant-view-photo" class="restaurant-overlay-photo" src="" alt="" />
+      <div class="restaurant-overlay-split">
+        <img id="restaurant-view-photo" class="restaurant-overlay-photo" src="" alt="" />
 
-      <div class="restaurant-overlay-body">
-        <h2 id="restaurant-view-title" class="text-display-lg"></h2>
+        <div class="restaurant-overlay-body">
+          <div class="restaurant-overlay-info">
+            <h2 id="restaurant-view-title" class="text-display-lg"></h2>
 
-        <p class="text-body-md restaurant-overlay-meta">
-          <span id="restaurant-view-cuisine"></span>
-          <span aria-hidden="true">·</span>
-          <span id="restaurant-view-hours"></span>
-        </p>
-        <p class="text-body-md restaurant-overlay-meta">
-          <span class="card-rating" id="restaurant-view-rating"></span>
-        </p>
+            <p class="text-body-md restaurant-overlay-meta">
+              <span class="card-rating" id="restaurant-view-rating"></span>
+              <span aria-hidden="true">·</span>
+              <span id="restaurant-view-distance"></span>
+            </p>
+            <p class="text-body-md restaurant-overlay-meta">
+              <span id="restaurant-view-cuisine"></span>
+              <span aria-hidden="true">·</span>
+              <span id="restaurant-view-hours"></span>
+            </p>
 
-        <div id="restaurant-view-badges" class="card-badges restaurant-overlay-badges"></div>
+            <div id="restaurant-view-badges" class="card-badges restaurant-overlay-badges"></div>
+          </div>
 
-        <details class="restaurant-menu-toggle">
-          <summary class="text-headline-sm restaurant-menu-summary">View Menu</summary>
-          <div id="restaurant-view-menu" class="restaurant-menu-body"></div>
-        </details>
+          <details id="restaurant-menu-toggle" class="restaurant-menu-toggle">
+            <summary class="restaurant-menu-summary">
+              <span id="restaurant-menu-label" class="text-headline-sm">View Menu</span>
+              <svg class="restaurant-menu-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </summary>
+            <div id="restaurant-view-menu" class="restaurant-menu-body"></div>
+          </details>
 
-        <p id="restaurant-view-booking-cap-message" class="text-body-md field-error" hidden>
-          You already have 3 active reservations — wait for one of your upcoming reservations to pass before booking another.
-        </p>
-        <button type="button" id="restaurant-view-book" class="btn btn-primary restaurant-overlay-book">Book Now</button>
+          <p id="restaurant-view-booking-cap-message" class="text-body-md field-error" hidden>
+            You already have 3 active reservations — wait for one of your upcoming reservations to pass before booking another.
+          </p>
+          <button type="button" id="restaurant-view-book" class="btn btn-primary restaurant-overlay-book">Book Now</button>
+        </div>
       </div>
     </div>
   </section>
@@ -367,13 +381,9 @@
         </div>
 
         <nav class="nav-links book-now-nav-links" aria-label="Book Now sections">
-          <a href="#book-now-table-time" class="nav-link">Table &amp; Time</a>
-          <a href="#book-now-pricing" class="nav-link">Pricing</a>
-          <a href="#book-now-waitlist" class="nav-link">Waitlist</a>
+          <a href="#book-now-table-time" class="nav-link is-active">Table &amp; Time</a>
           <a href="#book-now-preorder" class="nav-link">Pre-Order</a>
           <a href="#book-now-invites" class="nav-link">Invites &amp; RSVP</a>
-          <a href="#book-now-bill-split" class="nav-link">Bill Split</a>
-          <a href="#book-now-summary" class="nav-link">Summary</a>
         </nav>
 
         <div class="nav-actions"></div>
@@ -418,66 +428,78 @@
         <div id="book-now-tables" class="book-now-table-list">
           <p class="text-body-md book-now-placeholder">Enter a party size, date, and time to see available tables.</p>
         </div>
+
+        <!-- Inline join-waitlist feedback — was its own "Waitlist" section;
+             it only ever reacts to a slot picked above, so it belongs here.
+             Hidden until the guest actually joins a waitlist (see
+             UI.BookNow.joinWaitlist) — no instructional placeholder shown
+             while it doesn't apply. -->
+        <div id="book-now-waitlist-status" class="book-now-waitlist-inline" hidden></div>
       </section>
 
-      <section id="book-now-pricing" class="book-now-section">
-        <h2 class="text-headline-md">Pricing</h2>
+      <!-- Two-column layout, only shown once a table is selected (see
+           UI.BookNow.selectTable). Left continues the linear flow; right is
+           a persistent recap that stays mounted (not an empty placeholder)
+           the whole time this is visible. -->
+      <div id="book-now-split" class="book-now-split" hidden>
 
-        <div class="field">
-          <label class="field-label" for="book-now-coupon">Coupon / Membership Code</label>
-          <input class="field-input" type="text" id="book-now-coupon" placeholder="Optional" />
+        <div class="book-now-split-left">
+
+          <section id="book-now-preorder" class="book-now-section">
+            <h2 class="text-headline-md">Pre-Order</h2>
+            <p class="text-body-md book-now-placeholder">Optional — add items now, no need to decide everything today.</p>
+            <div id="book-now-preorder-menu" class="restaurant-menu-body"></div>
+          </section>
+
+          <section id="book-now-invites" class="book-now-section">
+            <h2 class="text-headline-md">Invites &amp; RSVP</h2>
+
+            <p id="book-now-invite-summary" class="text-body-md book-now-invite-summary"></p>
+
+            <div class="book-now-invite-form">
+              <input class="field-input" type="text" id="book-now-invite-name" placeholder="Guest name" />
+              <button type="button" id="book-now-invite-add" class="btn btn-secondary">Add</button>
+            </div>
+            <p id="book-now-invite-error" class="text-body-md field-error" hidden></p>
+
+            <ul id="book-now-invite-list" class="book-now-invite-list"></ul>
+          </section>
+
+          <section id="book-now-confirm-section" class="book-now-section">
+            <button type="button" id="book-now-confirm" class="btn btn-primary book-now-confirm-btn" disabled>
+              <span class="book-now-confirm-spinner" aria-hidden="true"></span>
+              Confirm Booking
+            </button>
+
+            <div id="book-now-confirm-status" class="book-now-confirm-status" hidden></div>
+          </section>
+
         </div>
 
-        <div id="book-now-pricing-breakdown" class="book-now-pricing-breakdown">
-          <p class="text-body-md book-now-placeholder">Select a party size and date/time to see pricing.</p>
-        </div>
-      </section>
+        <aside id="book-now-bill-summary" class="book-now-bill-summary">
+          <div id="book-now-summary-header"></div>
 
-      <section id="book-now-waitlist" class="book-now-section">
-        <h2 class="text-headline-md">Waitlist</h2>
-        <div id="book-now-waitlist-status">
-          <p class="text-body-md book-now-placeholder">Pick a fully booked time above and join the waitlist for it.</p>
-        </div>
-      </section>
+          <div class="book-now-ticket-block">
+            <p class="field-label">Pricing</p>
 
-      <section id="book-now-preorder" class="book-now-section">
-        <h2 class="text-headline-md">Pre-Order</h2>
-        <p class="text-body-md book-now-placeholder">Optional — add items now, no need to decide everything today.</p>
-        <div id="book-now-preorder-menu" class="restaurant-menu-body"></div>
-      </section>
+            <div class="field">
+              <label class="field-label" for="book-now-coupon">Coupon / Membership Code</label>
+              <input class="field-input" type="text" id="book-now-coupon" placeholder="Optional" />
+            </div>
 
-      <section id="book-now-invites" class="book-now-section">
-        <h2 class="text-headline-md">Invites &amp; RSVP</h2>
+            <div id="book-now-pricing-breakdown" class="book-now-pricing-breakdown"></div>
+          </div>
 
-        <p id="book-now-invite-summary" class="text-body-md book-now-invite-summary"></p>
+          <div id="book-now-preorder-summary" class="book-now-ticket-block"></div>
 
-        <div class="book-now-invite-form">
-          <input class="field-input" type="text" id="book-now-invite-name" placeholder="Guest name" />
-          <button type="button" id="book-now-invite-add" class="btn btn-secondary">Add</button>
-        </div>
-        <p id="book-now-invite-error" class="text-body-md field-error" hidden></p>
+          <div class="book-now-ticket-block">
+            <p class="field-label">Bill Split</p>
+            <div id="book-now-bill-split-breakdown"></div>
+          </div>
 
-        <ul id="book-now-invite-list" class="book-now-invite-list"></ul>
-      </section>
-
-      <section id="book-now-bill-split" class="book-now-section">
-        <h2 class="text-headline-md">Bill Split</h2>
-        <div id="book-now-bill-split-breakdown">
-          <p class="text-body-md book-now-placeholder">Select a party size and date/time to see the bill split.</p>
-        </div>
-      </section>
-
-      <section id="book-now-summary" class="book-now-section">
-        <h2 class="text-headline-md">Summary</h2>
-
-        <div id="book-now-summary-content">
-          <p class="text-body-md book-now-placeholder">Complete party size, date/time, and a table above to see your booking summary.</p>
-        </div>
-
-        <button type="button" id="book-now-confirm" class="btn btn-primary book-now-confirm-btn" disabled>Confirm Booking</button>
-
-        <div id="book-now-confirm-status" class="book-now-confirm-status" hidden></div>
-      </section>
+          <p id="book-now-grand-total" class="book-now-price-total book-now-grand-total"></p>
+        </aside>
+      </div>
 
     </div>
   </section>
@@ -500,11 +522,6 @@
           <h1 class="text-headline-sm nav-wordmark dashboard-title">Dashboard</h1>
         </div>
 
-        <nav class="nav-links" aria-label="Dashboard sections">
-          <a href="#dashboard-profile" class="nav-link is-active">Profile</a>
-          <a href="#dashboard-reservations" class="nav-link">My Reservations</a>
-        </nav>
-
         <div class="nav-actions">
           <button type="button" id="dashboard-logout" class="btn btn-secondary dashboard-logout-btn">Log Out</button>
         </div>
@@ -513,126 +530,167 @@
 
     <div class="container section dashboard-layout">
 
-      <section id="dashboard-profile" class="dashboard-section">
-        <h2 class="text-headline-md">Your Profile</h2>
+      <!-- Same anchors/behavior as the plain nav-links this replaces (and
+           as Explore's avatar-menu "Profile"/"Reservations" items scroll to)
+           — just a persistent sidebar instead of a header row or dropdown. -->
+      <nav class="dashboard-sidebar" aria-label="Dashboard sections">
+        <a href="#dashboard-profile" class="dashboard-sidebar-link is-active">Profile</a>
+        <a href="#dashboard-reservations" class="dashboard-sidebar-link">Reservations</a>
+      </nav>
 
-        <form id="dashboard-profile-form" class="dashboard-profile-form">
+      <div class="dashboard-main">
 
-          <fieldset class="form-fieldset">
-            <legend class="text-headline-sm">Basic Info</legend>
-
-            <div class="field">
-              <label class="field-label" for="dashboard-field-name">Full Name</label>
-              <input autocomplete="off" class="field-input" type="text" id="dashboard-field-name" name="name" placeholder="Jordan Ellis" required />
-            </div>
-
-            <div class="field-row">
-              <div class="field">
-                <label class="field-label" for="dashboard-field-email">Email</label>
-                <input autocomplete="off" class="field-input" type="email" id="dashboard-field-email" name="email" placeholder="jordan@example.com" required />
+        <section id="dashboard-profile" class="dashboard-section">
+          <div class="dashboard-profile-header">
+            <h2 class="text-headline-md">Your Profile</h2>
+            <!-- Same title-on-one-side/visual-on-the-other row as
+                 .dashboard-reservations-header's title + booking-cap ring. -->
+            <div class="dashboard-profile-side">
+              <div class="dashboard-avatar nav-avatar" aria-hidden="true">
+                <span id="dashboard-avatar-initials"></span>
               </div>
-
-              <div class="field">
-                <label class="field-label" for="dashboard-field-phone">Phone</label>
-                <input autocomplete="off" class="field-input" type="tel" id="dashboard-field-phone" name="phone" placeholder="(555) 123-4567" />
-              </div>
+              <span id="dashboard-membership-badge" class="dashboard-membership-badge"></span>
             </div>
-          </fieldset>
-
-          <fieldset class="form-fieldset">
-            <legend class="text-headline-sm">Favorite Cuisines</legend>
-            <p class="text-body-md field-hint">Select as many as you like.</p>
-
-            <div class="chip-group">
-              <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="favoriteCuisines" value="italian" />
-                <span class="chip">Italian</span>
-              </label>
-              <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="favoriteCuisines" value="japanese" />
-                <span class="chip">Japanese</span>
-              </label>
-              <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="favoriteCuisines" value="french" />
-                <span class="chip">French</span>
-              </label>
-              <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="favoriteCuisines" value="steakhouse" />
-                <span class="chip">Steakhouse</span>
-              </label>
-              <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="favoriteCuisines" value="mediterranean" />
-                <span class="chip">Mediterranean</span>
-              </label>
-              <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="favoriteCuisines" value="seafood" />
-                <span class="chip">Seafood</span>
-              </label>
-            </div>
-          </fieldset>
-
-          <fieldset class="form-fieldset">
-            <legend class="text-headline-sm">Dietary Preferences</legend>
-            <p class="text-body-md field-hint">Optional — helps us tailor recommendations.</p>
-
-            <div class="chip-group">
-              <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="dietaryPreferences" value="vegetarian" />
-                <span class="chip">Vegetarian</span>
-              </label>
-              <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="dietaryPreferences" value="vegan" />
-                <span class="chip">Vegan</span>
-              </label>
-              <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="dietaryPreferences" value="halal" />
-                <span class="chip">Halal</span>
-              </label>
-              <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="dietaryPreferences" value="kosher" />
-                <span class="chip">Kosher</span>
-              </label>
-            </div>
-          </fieldset>
-
-          <fieldset class="form-fieldset">
-            <legend class="text-headline-sm">Allergies &amp; Intolerances</legend>
-            <p class="text-body-md field-hint">Optional — helps us tailor recommendations.</p>
-
-            <div class="chip-group">
-              <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="allergyTags" value="nut-allergy" />
-                <span class="chip">Nut Allergy</span>
-              </label>
-              <label class="chip-option">
-                <input class="chip-input" type="checkbox" name="allergyTags" value="gluten-free" />
-                <span class="chip">Gluten-Free</span>
-              </label>
-            </div>
-          </fieldset>
-
-          <div class="dashboard-profile-actions">
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-            <p id="dashboard-save-status" class="text-body-md dashboard-save-status" hidden>Profile saved.</p>
           </div>
 
-        </form>
-      </section>
+          <div class="card dashboard-profile-card">
+            <form id="dashboard-profile-form" class="dashboard-profile-form">
 
-      <section id="dashboard-reservations" class="dashboard-section">
-        <h2 class="text-headline-md">My Reservations</h2>
+                <fieldset class="form-fieldset dashboard-fieldset-full">
+                  <legend class="text-headline-sm">Basic Info</legend>
 
-        <!-- Two independent elements, not one combined visual — active count
-             (bookings with a future dateTime) and total-ever count (all
-             reservations, for membership) diverge over time. -->
-        <div class="dashboard-status-row">
-          <div id="dashboard-active-ring" class="dashboard-ring"></div>
-          <span id="dashboard-membership-badge" class="dashboard-membership-badge"></span>
-        </div>
+                  <div class="field-row-3">
+                    <div class="field">
+                      <label class="field-label" for="dashboard-field-name">Full Name</label>
+                      <input autocomplete="off" class="field-input" type="text" id="dashboard-field-name" name="name" placeholder="Jordan Ellis" required />
+                    </div>
 
-        <div id="dashboard-reservations-list" class="dashboard-reservations-list"></div>
-      </section>
+                    <div class="field">
+                      <label class="field-label" for="dashboard-field-email">Email</label>
+                      <input autocomplete="off" class="field-input" type="email" id="dashboard-field-email" name="email" placeholder="jordan@example.com" required />
+                    </div>
 
+                    <div class="field">
+                      <label class="field-label" for="dashboard-field-phone">Phone</label>
+                      <input autocomplete="off" class="field-input" type="tel" id="dashboard-field-phone" name="phone" placeholder="(555) 123-4567" />
+                    </div>
+                  </div>
+                </fieldset>
+
+                <fieldset class="form-fieldset">
+                  <legend class="text-headline-sm">Favorite Cuisines</legend>
+                  <p class="text-body-md field-hint">Select as many as you like.</p>
+
+                  <div class="chip-group">
+                    <label class="chip-option">
+                      <input class="chip-input" type="checkbox" name="favoriteCuisines" value="italian" />
+                      <span class="chip">Italian</span>
+                    </label>
+                    <label class="chip-option">
+                      <input class="chip-input" type="checkbox" name="favoriteCuisines" value="japanese" />
+                      <span class="chip">Japanese</span>
+                    </label>
+                    <label class="chip-option">
+                      <input class="chip-input" type="checkbox" name="favoriteCuisines" value="french" />
+                      <span class="chip">French</span>
+                    </label>
+                    <label class="chip-option">
+                      <input class="chip-input" type="checkbox" name="favoriteCuisines" value="steakhouse" />
+                      <span class="chip">Steakhouse</span>
+                    </label>
+                    <label class="chip-option">
+                      <input class="chip-input" type="checkbox" name="favoriteCuisines" value="mediterranean" />
+                      <span class="chip">Mediterranean</span>
+                    </label>
+                    <label class="chip-option">
+                      <input class="chip-input" type="checkbox" name="favoriteCuisines" value="seafood" />
+                      <span class="chip">Seafood</span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="form-fieldset">
+                  <legend class="text-headline-sm">Dietary Preferences</legend>
+                  <p class="text-body-md field-hint">Optional — helps us tailor recommendations.</p>
+
+                  <div class="chip-group">
+                    <label class="chip-option">
+                      <input class="chip-input" type="checkbox" name="dietaryPreferences" value="vegetarian" />
+                      <span class="chip">Vegetarian</span>
+                    </label>
+                    <label class="chip-option">
+                      <input class="chip-input" type="checkbox" name="dietaryPreferences" value="vegan" />
+                      <span class="chip">Vegan</span>
+                    </label>
+                    <label class="chip-option">
+                      <input class="chip-input" type="checkbox" name="dietaryPreferences" value="halal" />
+                      <span class="chip">Halal</span>
+                    </label>
+                    <label class="chip-option">
+                      <input class="chip-input" type="checkbox" name="dietaryPreferences" value="kosher" />
+                      <span class="chip">Kosher</span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="form-fieldset">
+                  <legend class="text-headline-sm">Allergies &amp; Intolerances</legend>
+                  <p class="text-body-md field-hint">Optional — helps us tailor recommendations.</p>
+
+                  <div class="chip-group">
+                    <label class="chip-option">
+                      <input class="chip-input" type="checkbox" name="allergyTags" value="nut-allergy" />
+                      <span class="chip">Nut Allergy</span>
+                    </label>
+                    <label class="chip-option">
+                      <input class="chip-input" type="checkbox" name="allergyTags" value="gluten-free" />
+                      <span class="chip">Gluten-Free</span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <div class="dashboard-profile-actions dashboard-fieldset-full">
+                  <button type="submit" class="btn btn-primary">Save Changes</button>
+                  <p id="dashboard-save-status" class="text-body-md dashboard-save-status" hidden>Profile saved.</p>
+                </div>
+
+            </form>
+          </div>
+        </section>
+
+        <section id="dashboard-reservations" class="dashboard-section">
+          <div class="dashboard-reservations-header">
+            <h2 class="text-headline-md">My Reservations</h2>
+            <!-- Enlarged via .dashboard-ring-lg (screen-dashboard.css) only —
+                 same ring markup/math renderActiveRing() already builds. -->
+            <div id="dashboard-active-ring" class="dashboard-ring dashboard-ring-lg"></div>
+          </div>
+
+          <div id="dashboard-reservations-list" class="dashboard-reservations-list"></div>
+        </section>
+
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Reservation receipt — a read-only recap opened by clicking a confirmed
+       reservation's QR code in the Dashboard (ReservationReceipt in ui.js).
+       Same overlay shape (backdrop + close button) as Restaurant View, but a
+       single-column, content-height panel styled as a ticket/receipt rather
+       than a fixed-height split layout — nothing here is interactive or
+       needs to update once it's rendered. -->
+  <section id="reservation-receipt-overlay" class="restaurant-overlay" hidden>
+    <div class="restaurant-overlay-backdrop"></div>
+
+    <div class="reservation-receipt-panel">
+      <button type="button" id="reservation-receipt-close" class="restaurant-overlay-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M6 6l12 12M18 6 6 18" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+
+      <div id="reservation-receipt-body" class="reservation-receipt-body"></div>
     </div>
   </section>
 

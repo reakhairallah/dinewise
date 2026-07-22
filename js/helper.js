@@ -64,3 +64,20 @@ const closeOnOutsideClick = (selector) => {
   });
   return elements;
 };
+
+// Body still receives wheel/touch/keyboard scroll input even with a
+// position:fixed overlay visually on top of it — overflow: hidden is what
+// actually stops it. Compensated with padding-right equal to the
+// scrollbar's own width so removing the scrollbar doesn't reflow/shift the
+// page by that width. Shared by every full-screen overlay (Restaurant View,
+// the reservation receipt), not just one.
+const lockBodyScroll = () => {
+  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+  document.body.style.overflow = 'hidden';
+  if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
+};
+
+const unlockBodyScroll = () => {
+  document.body.style.overflow = '';
+  document.body.style.paddingRight = '';
+};

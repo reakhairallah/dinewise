@@ -74,9 +74,13 @@ button.filter-chip-summary:disabled {
 }
 
 /* Smart-pick action button — AI gradient treatment, always-on since it's a
-   one-shot action, not a togglable filter. */
+   one-shot action, not a togglable filter. Tighter padding than the
+   standard .btn so the icon slot reads as clearly larger than the button
+   itself, not just larger than its own label text. */
 .filter-action-ai {
   position: relative;
+  padding-block: 10px;
+  padding-inline: var(--space-2);
   background: var(--gradient-ai);
   border-color: var(--color-primary);
   color: var(--color-on-primary);
@@ -94,31 +98,63 @@ button.filter-chip-summary:disabled {
   animation: sparkle-pulse 1.6s ease-in-out infinite;
 }
 
-/* Only shown once a recommendation sort is active (toggled in ui.js) —
-   dismisses back to normal order without toggling the summary's own
-   <details> open state. */
-.smart-pick-dismiss {
-  display: flex;
+/* Icon slot — one fixed-size box, three mutually-exclusive states toggled
+   via [data-state] (set in ui.js): sparkle (default) → spinner (loading,
+   while the sort itself is deliberately delayed to match) → "×" (reset,
+   once a recommendation is active; clicking it calls Explore.reset()).
+   Sized once here so swapping states never resizes/reflows the button. */
+.smart-pick-icon-slot {
+  position: relative;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
+  padding: 0;
   border: none;
-  border-radius: var(--radius-full);
-  background: rgb(0 0 0 / 15%);
-  color: var(--color-on-primary);
-  font-size: 13px;
-  line-height: 1;
+  background: none;
+  color: inherit;
   cursor: pointer;
 }
 
-.smart-pick-dismiss[hidden] {
+.smart-pick-icon-sparkle,
+.smart-pick-icon-spinner,
+.smart-pick-icon-dismiss {
   display: none;
 }
 
-.smart-pick-dismiss:hover {
-  background: rgb(0 0 0 / 30%);
+.smart-pick-icon-slot[data-state='default'] .smart-pick-icon-sparkle {
+  display: block;
+}
+
+.smart-pick-icon-slot[data-state='loading'] .smart-pick-icon-spinner {
+  display: block;
+}
+
+.smart-pick-icon-slot[data-state='reset'] .smart-pick-icon-dismiss {
+  display: flex;
+}
+
+/* Shape/border only, no color-token dependency since the palette isn't
+   finalized; currentColor picks up whatever text color the button already has. */
+.smart-pick-icon-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--radius-full);
+  animation: smart-pick-spin 0.6s linear infinite;
+}
+
+@keyframes smart-pick-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.smart-pick-icon-dismiss {
+  color: var(--color-on-primary);
 }
 
 @keyframes sparkle-pulse {

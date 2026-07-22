@@ -14,6 +14,10 @@ const Reservations = {
     return this.list().filter((reservation) => reservation.guestId === guestId);
   },
 
+  get(id) {
+    return this.list().find((reservation) => reservation.id === id) ?? null;
+  },
+
   // Active or past, all of them — membership status is recalculated fresh
   // per booking from this count, never stored as a profile flag.
   countForGuest(guestId) {

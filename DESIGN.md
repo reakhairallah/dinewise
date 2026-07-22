@@ -50,23 +50,23 @@ colors:
   surface-variant: '#333533'
 typography:
   display-lg:
-    fontFamily: Playfair Display
+    fontFamily: Manrope
     fontSize: 48px
-    fontWeight: '700'
+    fontWeight: '600'
     lineHeight: '1.1'
     letterSpacing: -0.02em
   display-lg-mobile:
-    fontFamily: Playfair Display
+    fontFamily: Manrope
     fontSize: 36px
-    fontWeight: '700'
+    fontWeight: '600'
     lineHeight: '1.2'
   headline-md:
-    fontFamily: Playfair Display
+    fontFamily: Manrope
     fontSize: 32px
     fontWeight: '600'
     lineHeight: '1.3'
   headline-sm:
-    fontFamily: Playfair Display
+    fontFamily: Manrope
     fontSize: 24px
     fontWeight: '500'
     lineHeight: '1.4'
@@ -126,7 +126,7 @@ The palette is anchored in deep, nocturnal tones to mimic the atmosphere of an u
 
 The typography system relies on the tension between the classic, high-contrast Serif and the utilitarian Sans-serif. 
 
-**Playfair Display** is used for all editorial moments: restaurant names, section headers, and quotes. It should be treated with generous leading. **Inter** handles all functional UI, data points, and long-form descriptions to ensure the platform feels modern and efficient despite its traditional aesthetic. 
+**Manrope** is used for all editorial moments: restaurant names, section headers, and quotes. It should be treated with generous leading. **Inter** handles all functional UI, data points, and long-form descriptions to ensure the platform feels modern and efficient despite its traditional aesthetic. 
 
 Uppercase styling is reserved for labels and small navigational elements to evoke the feel of a formal menu index.
 
@@ -156,7 +156,7 @@ Buttons and input fields should utilize this subtle radius. Larger containers li
 ## Components
 
 - **Buttons:** Primary buttons are solid Brass (#C5A059) with dark text. Secondary buttons are outlined in Brass with Ivory text. All buttons use uppercase Inter for a formal tone.
-- **Cards:** Restaurant cards feature a large image ratio (3:2), Ivory titles in Playfair Display, and a subtle "Walnut" hover state. 
+- **Cards:** Restaurant cards feature a large image ratio (3:2), Ivory titles in Manrope, and a subtle "Walnut" hover state. 
 - **Forms:** Input fields are minimal—1px bottom borders only (Ivory at 50% opacity) that turn Brass upon focus, mimicking a handwritten ledger line.
 - **Filter Bar:** A horizontal scroll of text-only labels. The active state is indicated by a small Brass dot underneath the label rather than a bulky background pill.
 - **Chips:** Used for cuisine types; styled with a dark walnut background and small brass borders.

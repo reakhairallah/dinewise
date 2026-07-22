@@ -37,10 +37,136 @@ const hasProfileSignal = (guest) => Boolean(
   guest?.favoriteCuisines?.length || guest?.dietaryPreferences?.length || guest?.allergyTags?.length,
 );
 
+// Shared by the nav bar's small avatar (Nav.renderProfile) and the
+// Dashboard's large one (Dashboard.renderAvatar) — same initials, same
+// fallback, just rendered at two different sizes.
+const getGuestInitials = (guest) => {
+  const name = guest?.name?.trim();
+  return name
+    ? name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0].toUpperCase()).join('')
+    : 'G';
+};
+
 // A restaurant referenced by an old reservation/waitlist entry could in
 // principle no longer exist (deleted from Admin) — falls back to a fixed
 // label rather than showing a blank title.
 const getRestaurantName = (restaurantId) => Restaurants.get(restaurantId)?.title ?? 'Restaurant no longer available';
+
+/* =========================================================
+   Bill-summary renderers — pure functions over a pricing breakdown/
+   pre-order/invitees shape, not tied to where that data comes from. Shared
+   by Book Now's live in-progress preview (BookNow.renderPricing et al.,
+   reading this.* form state) and the Dashboard's read-only reservation
+   receipt (ReservationReceipt.open, reading a saved reservation record) —
+   one rendering path for the same numbers either way.
+   ========================================================= */
+const renderPriceRows = (pricing, partySize, baseRate) => {
+  const { basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount } = pricing;
+
+  const rows = [
+    `<li><span>Base price (${partySize} × $${baseRate.toFixed(2)})</span><span>$${basePrice.toFixed(2)}</span></li>`,
+    `<li><span>${isPeak ? 'Peak' : 'Off-Peak'} adjustment</span><span>${peakAdjustment >= 0 ? '+' : '−'}$${Math.abs(peakAdjustment).toFixed(2)}</span></li>`,
+  ];
+  if (couponDiscount > 0) {
+    rows.push(`<li><span>Coupon discount</span><span>−$${couponDiscount.toFixed(2)}</span></li>`);
+  }
+  if (membershipDiscount > 0) {
+    rows.push(`<li><span>Membership discount</span><span>−$${membershipDiscount.toFixed(2)}</span></li>`);
+  }
+
+  return `<ul class="book-now-price-rows">${rows.join('')}</ul>`;
+};
+
+const getPreOrderItemsTotal = (preOrderItems) => preOrderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+const renderPreOrderRows = (preOrderItems) => {
+  if (!preOrderItems.length) return '';
+
+  return `
+    <p class="field-label">Pre-order Items</p>
+    <ul class="book-now-price-rows">
+      ${preOrderItems.map((item) => `<li><span>${item.name} ×${item.quantity}</span><span>$${(item.price * item.quantity).toFixed(2)}</span></li>`).join('')}
+    </ul>
+    <p class="book-now-preorder-total"><span>Pre-order total</span><span>$${getPreOrderItemsTotal(preOrderItems).toFixed(2)}</span></p>
+  `;
+};
+
+// Splits a total evenly across the host + accepted invitees — host-only
+// naturally falls out of the same division (total / 1) when there are none.
+const getBillSplitShares = (combinedTotal, hostName, invitees) => {
+  const acceptedInvitees = invitees.filter((invitee) => invitee.rsvpStatus === 'accepted');
+  const share = combinedTotal / (1 + acceptedInvitees.length);
+
+  return [
+    { label: `${hostName || 'You'} (Host)`, amount: share },
+    ...acceptedInvitees.map((invitee) => ({ label: invitee.name, amount: share })),
+  ];
+};
+
+const renderBillSplitRows = (shares) => `
+  <ul class="book-now-price-rows">
+    ${shares.map((share) => `<li><span>${share.label}</span><span>$${share.amount.toFixed(2)}</span></li>`).join('')}
+  </ul>
+`;
+
+// Toggles `is-active` on whichever link's target section has scrolled up
+// past the anchor line — shared by Dashboard's sidebar (Profile/
+// Reservations) and Book Now's section nav (Table & Time/Pre-Order/
+// Invites & RSVP), so both get the same active-link behavior instead of two
+// hand-synced copies. Picks the last section (in document order) whose top
+// has scrolled past the anchor — simple and correct regardless of how tall
+// any one section's content is, unlike an IntersectionObserver threshold
+// tuned for one particular content length.
+//
+// Scroll position alone isn't enough, though: a short section can leave the
+// page barely taller than the viewport, so it may never scroll far enough
+// up to cross the anchor line at all. Clicking a link sets its is-active
+// immediately — and stays put for the ~600ms the resulting smooth scroll
+// takes to settle, otherwise updateActive's own scroll handler (still
+// measuring a scroll position that hasn't caught up yet) would immediately
+// flip it right back.
+//
+// Sections hidden behind a `hidden` ancestor (Book Now's Pre-Order/Invites
+// column, hidden until a table is picked) are skipped rather than treated
+// as "scrolled past" — a hidden element's getBoundingClientRect() is all
+// zeros, which would otherwise read as "already scrolled past" and mark it
+// active before it's even shown.
+const initScrollSpy = (linkSelector, { anchorY = 120 } = {}) => {
+  const links = [...document.querySelectorAll(linkSelector)];
+  if (!links.length) return;
+
+  const sections = links.map((link) => document.querySelector(link.getAttribute('href')));
+  let suppressUntil = 0;
+
+  const updateActive = () => {
+    if (Date.now() < suppressUntil) return;
+
+    let activeIndex = 0;
+    sections.forEach((section, index) => {
+      if (!section || section.offsetParent === null) return;
+      if (section.getBoundingClientRect().top - anchorY <= 0) activeIndex = index;
+    });
+    links.forEach((link, index) => link.classList.toggle('is-active', index === activeIndex));
+  };
+
+  links.forEach((link, linkIndex) => {
+    link.addEventListener('click', () => {
+      // A link to a currently-hidden section (Book Now's Pre-Order/Invites
+      // before a table is picked) is still clickable even though its
+      // target isn't — this is the same "skip hidden sections" guard
+      // updateActive() applies via scroll, just applied to the click path
+      // too, so clicking one can't force it active out from under that.
+      const section = sections[linkIndex];
+      if (!section || section.offsetParent === null) return;
+
+      links.forEach((candidate) => candidate.classList.toggle('is-active', candidate === link));
+      suppressUntil = Date.now() + 600;
+    });
+  });
+
+  window.addEventListener('scroll', updateActive, { passive: true });
+  updateActive();
+};
 
 /* =========================================================
    Guest profile persistence — the one save path for the whole app. Signup
@@ -88,6 +214,7 @@ const UI = {
     this.RestaurantView.init();
     this.BookNow.init();
     this.Dashboard.init();
+    this.ReservationReceipt.init();
     this.Router.routeInitial();
   },
 
@@ -219,13 +346,7 @@ const UI = {
 
     renderProfile() {
       if (!this.avatarInitials) return;
-
-      const name = Guest.get()?.name?.trim();
-      const initials = name
-        ? name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0].toUpperCase()).join('')
-        : 'G';
-
-      this.avatarInitials.textContent = initials;
+      this.avatarInitials.textContent = getGuestInitials(Guest.get());
     },
 
     closeDropdowns() {
@@ -290,11 +411,12 @@ const UI = {
     init() {
       this.quickAddChip = document.getElementById('smart-pick-chip');
       this.quickAddPanel = document.getElementById('smart-pick-quickadd');
-      this.dismissButton = document.getElementById('smart-pick-dismiss');
+      this.pickIcon = document.getElementById('smart-pick-icon');
       this.recommendedId = null;
 
       this.render();
       this.bindCardOpen();
+      this.setIconState('default');
 
       // #smart-pick-chip is a plain .filter-chip <details>, so Filters.init()
       // already gives it the same open/close-on-outside-click/mutual-exclusion
@@ -306,9 +428,12 @@ const UI = {
       // so the bubbled click doesn't also reach the summary's own click
       // listener (handleActionClick) and immediately re-rank right after
       // this resets — the guest almost certainly has profile signal by the
-      // time this button is even visible, which is exactly the branch that
-      // would otherwise fire.
-      this.dismissButton?.addEventListener('click', (event) => {
+      // time this icon is even showing its "×" state, which is exactly the
+      // branch that would otherwise fire. In the default/loading states the
+      // icon isn't in "reset" mode, so the click just falls through and
+      // bubbles to the summary as normal.
+      this.pickIcon?.addEventListener('click', (event) => {
+        if (this.pickIcon.dataset.state !== 'reset') return;
         event.preventDefault();
         event.stopPropagation();
         this.reset();
@@ -321,6 +446,19 @@ const UI = {
       this.quickAddChip?.addEventListener('toggle', () => {
         if (this.quickAddChip.open) this.resetQuickAddPanel();
       });
+    },
+
+    // One fixed-size icon slot, three mutually-exclusive states — see
+    // .smart-pick-icon-slot in screen-explore.css. Purely decorative
+    // (aria-hidden, no tab stop) in every state — the <summary> it sits
+    // inside is the single clickable/keyboard target, per the "no
+    // interactive element nested inside a <summary>" rule; a mouse click
+    // landing on it in the "reset" state is still caught separately (see
+    // the click listener below) to dismiss without also re-triggering the
+    // summary's own toggle.
+    setIconState(state) {
+      if (!this.pickIcon) return;
+      this.pickIcon.dataset.state = state;
     },
 
     resetQuickAddPanel() {
@@ -342,27 +480,39 @@ const UI = {
     reset() {
       this.recommendedId = null;
       this.quickAddChip?.removeAttribute('open');
-      if (this.dismissButton) this.dismissButton.hidden = true;
+      clearTimeout(this.pickLoadingTimer);
+      this.setIconState('default');
       this.render();
     },
 
     // The summary's native click behavior toggles the <details> panel open —
     // exactly what we want when there's nothing saved yet to sort by. But if
     // the guest already has profile signal, there's no reason to show the
-    // quick-add panel at all: block the native toggle and just sort.
+    // quick-add panel at all: block the native toggle and sort instead —
+    // after a brief delay so the loading state is real, not cosmetic on top
+    // of an already-finished sort.
     handleActionClick(event) {
       const guest = Guest.get();
       if (!hasProfileSignal(guest)) return;
 
       event.preventDefault();
       this.quickAddChip.removeAttribute('open');
-      this.rank(guest);
+
+      // sparkle → loading → × is the only cycle these icons ever run.
+      // Once already loading or already showing "×", a reclick on the
+      // button body is a no-op — only the "×" itself (handled separately,
+      // above) can move it back to 'default' and re-arm this.
+      if (this.pickIcon && this.pickIcon.dataset.state !== 'default') return;
+
+      this.setIconState('loading');
+      clearTimeout(this.pickLoadingTimer);
+      this.pickLoadingTimer = setTimeout(() => this.rank(guest), 650);
     },
 
     rank(guest) {
       const ranked = [...Restaurants.list()].sort((a, b) => Recommendation.compare(a, b, guest));
       this.recommendedId = ranked[0]?.id ?? null;
-      if (this.dismissButton) this.dismissButton.hidden = !this.recommendedId;
+      this.setIconState(this.recommendedId ? 'reset' : 'default');
       this.render(ranked);
     },
 
@@ -444,12 +594,40 @@ const UI = {
       this.cuisine = document.getElementById('restaurant-view-cuisine');
       this.hours = document.getElementById('restaurant-view-hours');
       this.rating = document.getElementById('restaurant-view-rating');
+      this.distance = document.getElementById('restaurant-view-distance');
       this.badges = document.getElementById('restaurant-view-badges');
       this.menu = document.getElementById('restaurant-view-menu');
+      this.menuToggle = document.getElementById('restaurant-menu-toggle');
+      this.menuLabel = document.getElementById('restaurant-menu-label');
       this.bookingCapMessage = document.getElementById('restaurant-view-booking-cap-message');
 
       document.getElementById('restaurant-view-close')?.addEventListener('click', () => this.close());
       document.getElementById('restaurant-view-book')?.addEventListener('click', () => this.handleBookClick());
+
+      // The overlay panel is a fixed height (see .restaurant-overlay-panel)
+      // and .restaurant-overlay-body scrolls internally — so this always has
+      // somewhere to scroll on toggle, regardless of the browser window's
+      // height. One-time scroll per toggle, not a standing restriction —
+      // free scroll otherwise.
+      this.menuToggle?.addEventListener('toggle', () => {
+        this.syncMenuLabel();
+        if (this.menuToggle.open) {
+          // block: 'start', not 'nearest' — 'nearest' is a no-op whenever
+          // the menu already happens to fit in the visible area, which
+          // fails the "always triggers" requirement. 'start' unconditionally
+          // aligns it every time.
+          this.menu.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          // The toggle row itself, not the name/info block above it — so
+          // "View Menu" lands near the top of the visible area, not a
+          // partial scroll that leaves it mid-way down.
+          this.menuToggle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    },
+
+    syncMenuLabel() {
+      if (this.menuLabel) this.menuLabel.textContent = this.menuToggle?.open ? 'Hide Menu' : 'View Menu';
     },
 
     // Counts active reservations before ever navigating to Book Now — a
@@ -479,21 +657,24 @@ const UI = {
       this.cuisine.textContent = restaurant.cuisine;
       this.hours.textContent = Restaurants.formatHours(restaurant);
       this.rating.textContent = `★ ${restaurant.rating}`;
+      this.distance.textContent = `${restaurant.distanceMiles} mi`;
       this.badges.innerHTML = renderBadges(restaurant.sustainabilityBadges)
         + renderBadges(restaurant.dietaryBadges, 'chip-dietary')
         + renderBadges(restaurant.allergenCautions, 'chip-allergen');
       this.menu.innerHTML = renderMenuSections(restaurant.menuItems);
+      this.syncMenuLabel();
 
       // Explore stays mounted/unhidden underneath — no screen swap, so its
       // scroll position is preserved for free; nothing to save or restore.
-      // (Deliberately not locking body scroll here: toggling overflow removes
-      // the scrollbar and reflows the page, which drifts the scroll position
-      // by the scrollbar's width — exactly what this needs to avoid.)
+      // lockBodyScroll() blocks it from scrolling further while the overlay
+      // sits on top of it.
       this.overlay.hidden = false;
+      lockBodyScroll();
     },
 
     close() {
       this.overlay.hidden = true;
+      unlockBodyScroll();
     },
   },
 
@@ -520,7 +701,10 @@ const UI = {
       this.inviteError = document.getElementById('book-now-invite-error');
       this.inviteList = document.getElementById('book-now-invite-list');
       this.billSplitBreakdown = document.getElementById('book-now-bill-split-breakdown');
-      this.summaryContent = document.getElementById('book-now-summary-content');
+      this.bookNowSplit = document.getElementById('book-now-split');
+      this.summaryHeader = document.getElementById('book-now-summary-header');
+      this.preOrderSummaryEl = document.getElementById('book-now-preorder-summary');
+      this.grandTotalEl = document.getElementById('book-now-grand-total');
       this.confirmButton = document.getElementById('book-now-confirm');
       this.confirmStatus = document.getElementById('book-now-confirm-status');
 
@@ -529,6 +713,11 @@ const UI = {
 
       [this.partySizeInput, this.dateInput].forEach((input) => {
         input.addEventListener('input', () => {
+          // A table pick is only ever valid for the exact party size/date/
+          // time it was made under — changing any of those invalidates it,
+          // so Pre-Order/Invites/Bill Summary go back to hidden until a
+          // table is explicitly picked again for the new combination.
+          this.resetTableSelection();
           this.renderTimeSlots();
           this.renderAvailableTables();
           this.renderPricing();
@@ -593,12 +782,14 @@ const UI = {
         const removeButton = event.target.closest('[data-action="remove"]');
         if (removeButton) this.removeInvitee(Number(removeButton.dataset.inviteeIndex));
       });
+
+      initScrollSpy('.book-now-nav-links .nav-link');
     },
 
     open(restaurant) {
       this.restaurant = restaurant;
       this.selectedTime = null;
-      this.selectedTableId = null;
+      this.resetTableSelection();
 
       this.photo.src = restaurant.photoUrl;
       this.photo.alt = restaurant.title;
@@ -614,17 +805,22 @@ const UI = {
       this.couponInput.value = '';
       this.renderAvailableTables();
       this.renderPreOrderMenu();
-      this.renderPricing();
-      this.waitlistStatus.innerHTML = '<p class="text-body-md book-now-placeholder">Pick a fully booked time above and join the waitlist for it.</p>';
+      this.hideWaitlistStatus();
 
       this.invitees = [];
       this.inviteNameInput.value = '';
       this.inviteError.hidden = true;
+
+      // renderPricing() cascades to renderPreOrderSummary/renderBillSplit/
+      // renderGrandTotal/renderSummaryHeader; renderInvitees() below refreshes
+      // bill split once more against the now-empty invitees list — same
+      // trigger graph as before, just fanned out to the split-up functions.
+      this.renderPricing();
       this.renderInvitees();
 
       this.confirmStatus.hidden = true;
       this.confirmStatus.innerHTML = '';
-      this.renderSummary();
+      this.confirmButton.classList.remove('is-confirming');
 
       UI.Router.showScreen('screen-book-now');
     },
@@ -679,22 +875,45 @@ const UI = {
       });
 
       this.selectedTime = null;
+      this.resetTableSelection();
       this.timeSummary.textContent = 'Select a time';
       this.timePicker.removeAttribute('open');
       this.renderAvailableTables();
       this.renderPricing();
 
       this.waitlistStatus.innerHTML = `<p class="text-body-md book-now-waitlist-confirmation">You're on the waitlist for ${formatTime12h(time)}.</p>`;
-      document.getElementById('book-now-waitlist')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      this.waitlistStatus.hidden = false;
+      this.waitlistStatus.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
 
     selectTime(time) {
       this.selectedTime = time;
+      this.resetTableSelection();
       this.timeSummary.textContent = formatTime12h(time);
       this.timePicker.removeAttribute('open');
 
       this.renderAvailableTables();
       this.renderPricing();
+    },
+
+    // A table pick only ever applies to the exact party size/date/time it
+    // was made under (see the partySize/dateInput 'input' listener above) —
+    // whenever that combination changes, Pre-Order/Invites/Bill Summary go
+    // back to their initial hidden state until a table is explicitly picked
+    // again (selectTable() is the only place that un-hides them). The
+    // waitlist confirmation is just as tied to that combination — picking a
+    // new time or changing party size/date makes any prior "you're on the
+    // waitlist for X" message stale, so it goes back to hidden too
+    // (joinWaitlist() is the only place that un-hides it).
+    resetTableSelection() {
+      this.selectedTableId = null;
+      this.bookNowSplit.hidden = true;
+      this.hideWaitlistStatus();
+    },
+
+    hideWaitlistStatus() {
+      this.waitlistStatus.hidden = true;
+      this.waitlistStatus.innerHTML = '';
     },
 
     // 'YYYY-MM-DD' + 'HH:MM' joined with 'T' — the exact shape a table's
@@ -752,6 +971,7 @@ const UI = {
       table.locks[dateTime] = true;
       Restaurants.set(this.restaurant);
       this.selectedTableId = tableId;
+      this.bookNowSplit.hidden = false;
 
       this.renderTimeSlots();
       this.renderAvailableTables();
@@ -760,7 +980,7 @@ const UI = {
 
     // Single source of the current pricing pipeline result for this render
     // cycle — computed once here, then reused by renderPricing/renderBillSplit/
-    // renderSummary/confirmBooking instead of each re-deriving isMember and
+    // renderGrandTotal/confirmBooking instead of each re-deriving isMember and
     // re-calling Pricing.calculate() with the same args.
     getPricingBreakdown() {
       const partySize = Number(this.partySizeInput.value);
@@ -789,49 +1009,67 @@ const UI = {
 
       if (!pricing) {
         this.pricingBreakdown.innerHTML = '<p class="text-body-md book-now-placeholder">Select a party size and date/time to see pricing.</p>';
-        this.renderBillSplit();
-        this.renderSummary();
+      } else {
+        // Total no longer lives here — it's the standalone grand total at
+        // the bottom of the bill-summary column (see renderGrandTotal()),
+        // not repeated inside the pricing breakdown too.
+        this.pricingBreakdown.innerHTML = renderPriceRows(pricing, partySize, this.restaurant.pricing.basePrice);
+      }
+
+      this.renderPreOrderSummary();
+      this.renderBillSplit();
+      this.renderGrandTotal();
+      this.renderSummaryHeader();
+    },
+
+    // Pre-order isn't part of Pricing.calculate()'s pipeline (it's not
+    // subject to the peak multiplier or coupon/membership discounts) — it's
+    // summed separately (getPreOrderTotal) and folded into the grand total
+    // by renderGrandTotal(). Its own block in the bill-summary column, below
+    // the pricing breakdown, same numbers renderPricing used to fold in.
+    renderPreOrderSummary() {
+      this.preOrderSummaryEl.innerHTML = renderPreOrderRows(this.getPreOrderItems());
+    },
+
+    // The one, non-repeated Total for the whole booking — same
+    // finalTotal + preOrderTotal formula renderPricing used to compute and
+    // display inline; now it's just the last thing in the column instead.
+    renderGrandTotal() {
+      const pricing = this.getPricingBreakdown();
+
+      if (!pricing) {
+        this.grandTotalEl.innerHTML = '';
         return;
       }
 
-      const { basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount, finalTotal } = pricing;
+      const combinedTotal = pricing.finalTotal + this.getPreOrderTotal();
+      this.grandTotalEl.innerHTML = `<span>Total</span><span>$${combinedTotal.toFixed(2)}</span>`;
+    },
 
-      const rows = [
-        `<li><span>Base price (${partySize} × $${this.restaurant.pricing.basePrice.toFixed(2)})</span><span>$${basePrice.toFixed(2)}</span></li>`,
-        `<li><span>${isPeak ? 'Peak' : 'Off-Peak'} adjustment</span><span>${peakAdjustment >= 0 ? '+' : '−'}$${Math.abs(peakAdjustment).toFixed(2)}</span></li>`,
-      ];
-      if (couponDiscount > 0) {
-        rows.push(`<li><span>Coupon discount</span><span>−$${couponDiscount.toFixed(2)}</span></li>`);
+    // Header for the persistent bill-summary column — the same
+    // restaurant/date-time/party-size/table fields the old ticket-style
+    // Summary section used to show up top, just relocated. Also the sole
+    // place Confirm Booking's disabled state is decided, same condition as
+    // before (party size + date/time + table all required).
+    renderSummaryHeader() {
+      const partySize = Number(this.partySizeInput.value);
+      const dateTime = this.getSelectedDateTime();
+      const table = this.selectedTableId
+        && this.restaurant.tableLayout.find((candidate) => candidate.id === this.selectedTableId);
+
+      if (!partySize || !dateTime || !table) {
+        this.summaryHeader.innerHTML = '';
+        this.confirmButton.disabled = true;
+        return;
       }
-      if (membershipDiscount > 0) {
-        rows.push(`<li><span>Membership discount</span><span>−$${membershipDiscount.toFixed(2)}</span></li>`);
-      }
 
-      // Pre-order isn't part of Pricing.calculate()'s pipeline (it's not
-      // subject to the peak multiplier or coupon/membership discounts) —
-      // it's summed in separately here and folded into the displayed total.
-      const preOrderItems = this.getPreOrderItems();
-      const preOrderTotal = preOrderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-      const combinedTotal = finalTotal + preOrderTotal;
+      this.confirmButton.disabled = false;
 
-      const preOrderSection = preOrderItems.length ? `
-        <div class="book-now-preorder-summary">
-          <p class="field-label">Pre-order Items</p>
-          <ul class="book-now-price-rows">
-            ${preOrderItems.map((item) => `<li><span>${item.name} ×${item.quantity}</span><span>$${(item.price * item.quantity).toFixed(2)}</span></li>`).join('')}
-          </ul>
-          <p class="book-now-preorder-total"><span>Pre-order total</span><span>$${preOrderTotal.toFixed(2)}</span></p>
-        </div>
-      ` : '';
-
-      this.pricingBreakdown.innerHTML = `
-        <ul class="book-now-price-rows">${rows.join('')}</ul>
-        ${preOrderSection}
-        <p class="book-now-price-total"><span>Total</span><span>$${combinedTotal.toFixed(2)}</span></p>
+      this.summaryHeader.innerHTML = `
+        <p class="book-now-ticket-restaurant">${this.restaurant.title}</p>
+        <p class="text-body-md book-now-ticket-meta">${formatReservationDateTime(dateTime)}</p>
+        <p class="text-body-md book-now-ticket-meta">Party of ${partySize} · Table ${table.id.slice(0, 8)} (Seats ${table.capacity})</p>
       `;
-
-      this.renderBillSplit();
-      this.renderSummary();
     },
 
     // Reuses renderMenuSections (Restaurant View's read-only "View Menu"
@@ -910,31 +1148,15 @@ const UI = {
           <button type="button" class="book-now-status-pill is-${invitee.rsvpStatus}" data-action="cycle-status" data-invitee-index="${index}">
             ${invitee.rsvpStatus}
           </button>
-          <button type="button" class="book-now-invite-remove" data-action="remove" data-invitee-index="${index}" aria-label="Remove ${invitee.name}">×</button>
+          <button type="button" class="icon-dismiss book-now-invite-remove" data-action="remove" data-invitee-index="${index}" aria-label="Remove ${invitee.name}">×</button>
         </li>
       `).join('');
 
       this.renderBillSplit();
-      this.renderSummary();
     },
 
     getPreOrderTotal() {
-      return this.getPreOrderItems().reduce((sum, item) => sum + item.price * item.quantity, 0);
-    },
-
-    // Splits a total evenly across the host + accepted invitees. Shared by
-    // renderBillSplit() and renderSummary() so both show identical numbers,
-    // not two independently-computed splits. Host-only naturally falls out
-    // of the same division — total / 1 — no separate branch needed.
-    getBillSplitShares(combinedTotal) {
-      const guest = Guest.get();
-      const acceptedInvitees = this.invitees.filter((invitee) => invitee.rsvpStatus === 'accepted');
-      const share = combinedTotal / (1 + acceptedInvitees.length);
-
-      return [
-        { label: `${guest?.name?.trim() || 'You'} (Host)`, amount: share },
-        ...acceptedInvitees.map((invitee) => ({ label: invitee.name, amount: share })),
-      ];
+      return getPreOrderItemsTotal(this.getPreOrderItems());
     },
 
     // Splits the complete total (Pricing.calculate()'s finalTotal + pre-order
@@ -949,13 +1171,10 @@ const UI = {
       }
 
       const combinedTotal = pricing.finalTotal + this.getPreOrderTotal();
-      const shares = this.getBillSplitShares(combinedTotal);
+      const guest = Guest.get();
+      const shares = getBillSplitShares(combinedTotal, guest?.name?.trim(), this.invitees);
 
-      this.billSplitBreakdown.innerHTML = `
-        <ul class="book-now-price-rows">
-          ${shares.map((share) => `<li><span>${share.label}</span><span>$${share.amount.toFixed(2)}</span></li>`).join('')}
-        </ul>
-      `;
+      this.billSplitBreakdown.innerHTML = renderBillSplitRows(shares);
     },
 
     // Blocks blank names, duplicates (case-insensitive, trimmed), and
@@ -1009,78 +1228,6 @@ const UI = {
       this.renderInvitees();
     },
 
-    // Read-only recap of everything selected elsewhere on this screen.
-    // Confirm Booking stays disabled until party size, date/time, and a
-    // table are all in place — there's nothing valid to confirm before then.
-    renderSummary() {
-      const partySize = Number(this.partySizeInput.value);
-      const dateTime = this.getSelectedDateTime();
-      const table = this.selectedTableId
-        && this.restaurant.tableLayout.find((candidate) => candidate.id === this.selectedTableId);
-
-      if (!partySize || !dateTime || !table) {
-        this.summaryContent.innerHTML = '<p class="text-body-md book-now-placeholder">Complete party size, date/time, and a table above to see your booking summary.</p>';
-        this.confirmButton.disabled = true;
-        return;
-      }
-
-      this.confirmButton.disabled = false;
-
-      const { basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount, finalTotal } = this.getPricingBreakdown();
-
-      const preOrderItems = this.getPreOrderItems();
-      const preOrderTotal = this.getPreOrderTotal();
-      const combinedTotal = finalTotal + preOrderTotal;
-      const shares = this.getBillSplitShares(combinedTotal);
-
-      const priceRows = [
-        `<li><span>Base price (${partySize} × $${this.restaurant.pricing.basePrice.toFixed(2)})</span><span>$${basePrice.toFixed(2)}</span></li>`,
-        `<li><span>${isPeak ? 'Peak' : 'Off-Peak'} adjustment</span><span>${peakAdjustment >= 0 ? '+' : '−'}$${Math.abs(peakAdjustment).toFixed(2)}</span></li>`,
-      ];
-      if (couponDiscount > 0) priceRows.push(`<li><span>Coupon discount</span><span>−$${couponDiscount.toFixed(2)}</span></li>`);
-      if (membershipDiscount > 0) priceRows.push(`<li><span>Membership discount</span><span>−$${membershipDiscount.toFixed(2)}</span></li>`);
-      if (preOrderTotal > 0) priceRows.push(`<li><span>Pre-order total</span><span>$${preOrderTotal.toFixed(2)}</span></li>`);
-
-      this.summaryContent.innerHTML = `
-        <div class="book-now-ticket">
-          <p class="book-now-ticket-restaurant">${this.restaurant.title}</p>
-          <p class="text-body-md book-now-ticket-meta">${formatReservationDateTime(dateTime)}</p>
-          <p class="text-body-md book-now-ticket-meta">Party of ${partySize} · Table ${table.id.slice(0, 8)} (Seats ${table.capacity})</p>
-
-          <div class="book-now-ticket-block">
-            <p class="field-label">Pricing</p>
-            <ul class="book-now-price-rows">${priceRows.join('')}</ul>
-            <p class="book-now-price-total"><span>Total</span><span>$${combinedTotal.toFixed(2)}</span></p>
-          </div>
-
-          ${preOrderItems.length ? `
-            <div class="book-now-ticket-block">
-              <p class="field-label">Pre-order Items</p>
-              <ul class="book-now-price-rows">
-                ${preOrderItems.map((item) => `<li><span>${item.name} ×${item.quantity}</span><span>$${(item.price * item.quantity).toFixed(2)}</span></li>`).join('')}
-              </ul>
-            </div>
-          ` : ''}
-
-          <div class="book-now-ticket-block">
-            <p class="field-label">Invitees</p>
-            ${this.invitees.length ? `
-              <ul class="book-now-price-rows">
-                ${this.invitees.map((invitee) => `<li><span>${invitee.name}</span><span>${invitee.rsvpStatus}</span></li>`).join('')}
-              </ul>
-            ` : '<p class="text-body-md book-now-placeholder">Just the host.</p>'}
-          </div>
-
-          <div class="book-now-ticket-block">
-            <p class="field-label">Bill Split</p>
-            <ul class="book-now-price-rows">
-              ${shares.map((share) => `<li><span>${share.label}</span><span>$${share.amount.toFixed(2)}</span></li>`).join('')}
-            </ul>
-          </div>
-        </div>
-      `;
-    },
-
     // Creates the actual reservation record and persists it via
     // Reservations.save(). Per CLAUDE.md there's no standalone
     // booking-confirmation screen — Book Now ends with a brief transition
@@ -1108,14 +1255,20 @@ const UI = {
       });
 
       this.confirmButton.disabled = true;
+      // Same shape/border spinner pattern as "Find my pick, wisely" — fixed
+      // slot (reserved space via .btn's gap, see screen-book-now.css), no
+      // color-token dependency, toggled for the same ~800ms this button's
+      // own confirming phase already took.
+      this.confirmButton.classList.add('is-confirming');
       this.confirmStatus.hidden = false;
       this.confirmStatus.innerHTML = '<p class="text-body-md">Confirming your reservation…</p>';
 
       setTimeout(() => {
+        this.confirmButton.classList.remove('is-confirming');
         this.confirmStatus.innerHTML = '<p class="text-body-md">Booking confirmed!</p>';
 
         setTimeout(() => {
-          UI.Dashboard.open();
+          UI.Dashboard.open('dashboard-reservations');
         }, 800);
       }, 800);
     },
@@ -1133,6 +1286,7 @@ const UI = {
         phone: document.getElementById('dashboard-field-phone'),
       };
       this.saveStatus = document.getElementById('dashboard-save-status');
+      this.avatarInitials = document.getElementById('dashboard-avatar-initials');
       this.activeRing = document.getElementById('dashboard-active-ring');
       this.membershipBadge = document.getElementById('dashboard-membership-badge');
       this.reservationsList = document.getElementById('dashboard-reservations-list');
@@ -1140,6 +1294,18 @@ const UI = {
       document.getElementById('dashboard-back')?.addEventListener('click', () => UI.Router.showScreen('screen-explore'));
       document.getElementById('dashboard-logout')?.addEventListener('click', () => UI.Router.logout());
       this.form.addEventListener('submit', (event) => this.handleSubmit(event));
+
+      // Event-delegated so it keeps working after renderReservations()
+      // replaces the list's innerHTML on every render.
+      this.reservationsList.addEventListener('click', (event) => {
+        const qr = event.target.closest('[data-reservation-id]');
+        if (!qr) return;
+
+        const reservation = Reservations.get(qr.dataset.reservationId);
+        if (reservation) UI.ReservationReceipt.open(reservation);
+      });
+
+      initScrollSpy('.dashboard-sidebar-link');
     },
 
     open(scrollToId) {
@@ -1157,6 +1323,7 @@ const UI = {
       if (!guest) return;
 
       this.saveStatus.hidden = true;
+      if (this.avatarInitials) this.avatarInitials.textContent = getGuestInitials(guest);
       this.fields.name.value = guest.name ?? '';
       this.fields.email.value = guest.email ?? '';
       this.fields.phone.value = guest.phone ?? '';
@@ -1180,6 +1347,7 @@ const UI = {
       });
 
       UI.Nav.renderProfile();
+      if (this.avatarInitials) this.avatarInitials.textContent = getGuestInitials(Guest.get());
       // The current sort (if any) reflects a snapshot of tags taken when
       // "Find my pick, wisely" was last clicked — editing tags here makes
       // that snapshot stale. Reset to normal order rather than re-sorting
@@ -1271,9 +1439,11 @@ const UI = {
             <p class="text-body-md dashboard-reservation-meta">
               ${formatReservationDateTime(reservation.dateTime)} · Party of ${reservation.partySize}
             </p>
-            ${pendingCount > 0 ? `<p class="text-body-md dashboard-reservation-note">Waiting on ${pendingCount} RSVP${pendingCount > 1 ? 's' : ''}.</p>` : ''}
+            ${pendingCount > 0 ? `<p class="text-body-md dashboard-reservation-note">${pendingCount} invitee${pendingCount > 1 ? 's' : ''} did not RSVP.</p>` : ''}
           </div>
-          <div class="dashboard-reservation-qr">${QR.renderSVG(reservation.id)}</div>
+          <button type="button" class="dashboard-reservation-qr" data-reservation-id="${reservation.id}" aria-label="View reservation details">
+            ${QR.renderSVG(reservation.id)}
+          </button>
         </article>
       `;
     },
@@ -1293,6 +1463,76 @@ const UI = {
           <span class="dashboard-waitlist-tag">Waiting</span>
         </article>
       `;
+    },
+  },
+
+  /* ----- Reservation receipt (opened by clicking a confirmed reservation's
+     QR code in the Dashboard) — a read-only recap built entirely from that
+     reservation's saved record, not live in-progress state. Reuses the same
+     bill-summary renderers Book Now's live preview uses
+     (renderPriceRows/renderPreOrderRows/getBillSplitShares/
+     renderBillSplitRows), just fed a saved snapshot instead of this.* form
+     state, since nothing here ever needs to change after it renders. ----- */
+  ReservationReceipt: {
+    init() {
+      this.overlay = document.getElementById('reservation-receipt-overlay');
+      this.body = document.getElementById('reservation-receipt-body');
+
+      document.getElementById('reservation-receipt-close')?.addEventListener('click', () => this.close());
+      this.overlay.addEventListener('click', (event) => {
+        if (event.target === this.overlay || event.target.classList.contains('restaurant-overlay-backdrop')) this.close();
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !this.overlay.hidden) this.close();
+      });
+    },
+
+    open(reservation) {
+      const restaurant = Restaurants.get(reservation.restaurantId);
+      const table = restaurant?.tableLayout.find((candidate) => candidate.id === reservation.tableId);
+      const { partySize, pricingBreakdown, preOrderItems, invitees, couponCode } = reservation;
+
+      // A restaurant deleted since this reservation was made has no live
+      // pricing.basePrice to read the per-head rate from — falls back to
+      // deriving it from the saved total instead of leaving the row blank.
+      const baseRate = restaurant?.pricing?.basePrice ?? (pricingBreakdown.basePrice / partySize);
+      const preOrderTotal = getPreOrderItemsTotal(preOrderItems);
+      const combinedTotal = pricingBreakdown.finalTotal + preOrderTotal;
+      const guest = Guest.get();
+      const shares = getBillSplitShares(combinedTotal, guest?.name?.trim(), invitees);
+
+      this.body.innerHTML = `
+        <div class="book-now-ticket-block">
+          <p class="book-now-ticket-restaurant">${getRestaurantName(reservation.restaurantId)}</p>
+          <p class="text-body-md book-now-ticket-meta">${formatReservationDateTime(reservation.dateTime)}</p>
+          <p class="text-body-md book-now-ticket-meta">
+            Party of ${partySize}${table ? ` · Table ${table.id.slice(0, 8)} (Seats ${table.capacity})` : ''}
+          </p>
+        </div>
+
+        <div class="book-now-ticket-block">
+          <p class="field-label">Pricing</p>
+          ${couponCode ? `<p class="text-body-md book-now-ticket-meta">Coupon: ${couponCode}</p>` : ''}
+          <div class="book-now-pricing-breakdown">${renderPriceRows(pricingBreakdown, partySize, baseRate)}</div>
+        </div>
+
+        ${preOrderItems.length ? `<div class="book-now-ticket-block">${renderPreOrderRows(preOrderItems)}</div>` : ''}
+
+        <div class="book-now-ticket-block">
+          <p class="field-label">Bill Split</p>
+          ${renderBillSplitRows(shares)}
+        </div>
+
+        <p class="book-now-price-total book-now-grand-total"><span>Total</span><span>$${combinedTotal.toFixed(2)}</span></p>
+      `;
+
+      this.overlay.hidden = false;
+      lockBodyScroll();
+    },
+
+    close() {
+      this.overlay.hidden = true;
+      unlockBodyScroll();
     },
   },
 };

@@ -27,29 +27,28 @@ confirmation.
    `storage.js`, exercises the full profile-create / profile-edit / role-select / logout logic,
    and every other screen assumes a profile + role already exist by the time they load.
 3. **`restaurants.js`** + 2–3 hardcoded seed restaurants (so Explore/Restaurant View have
-   something to render before Add/Edit Restaurant exists).
+   something to render).
 4. **Explore → Restaurant View → Book Now** — the core customer path; build in this order since
    each screen depends on the previous one existing.
 5. **Dashboard** — needs a real reservation to display, so it's easiest once Book Now can
    actually create one.
-6. **Admin Dashboard + Add/Edit Restaurant** — functionally independent of the customer path;
-   build any time after `restaurants.js` exists, including in parallel with step 4–5.
 
-**Today:** `storage.js` + Screen 1 is a complete, testable slice on its own — profile persists
-across refresh, role picker works, logout round-trips correctly. Good stopping point for one
-session.
+**Current state:** Screens 1–5 are all substantially built and tested — profile create/edit/
+role-select/logout, the full Explore → Restaurant View → Book Now → Dashboard customer path,
+and reservation/waitlist display all work end-to-end.
 
 ## Code organization
 
 - Develop in separate files under `js/`, each exposing one namespace object (except
   `seed-data.js`, which just provides fixture-generation globals for `restaurants.js`'s
-  `seed()`), in this dependency order: `storage.js` (`Storage`) → `seed-data.js` →
-  `restaurants.js` (`Restaurants`) → `reservations.js` (`Reservations`) → `pricing.js`
-  (`Pricing`) → `recommendation.js` (`Recommendation`) → `waitlist.js` (`Waitlist`) →
-  `qr.js` (`QR`) → `ui.js` (`UI`) → `init.js` (app start, inside a `DOMContentLoaded`
-  listener).
+  `seed()`, and `helper.js`, which provides generic DOM/format helpers with no namespace
+  object, shared across `restaurants.js`, `pricing.js`, and `ui.js`), in this dependency
+  order: `storage.js` (`Storage`) → `seed-data.js` → `helper.js` → `restaurants.js`
+  (`Restaurants`) → `reservations.js` (`Reservations`) → `pricing.js` (`Pricing`) →
+  `recommendation.js` (`Recommendation`) → `waitlist.js` (`Waitlist`) → `qr.js` (`QR`) →
+  `ui.js` (`UI`) → `init.js` (app start, inside a `DOMContentLoaded` listener).
 - Each `js/` file is loaded directly via its own `<script>` tag in `index.html`, in dependency
-  order: storage.js → seed-data.js → restaurants.js → reservations.js → pricing.js →
+  order: storage.js → seed-data.js → helper.js → restaurants.js → reservations.js → pricing.js →
   recommendation.js → waitlist.js → qr.js → ui.js → init.js. No concatenation step, no bundler.
 - Final deliverable: `index.html` + split files under `js/` and `styles/`. No single
   `app.js` or single `style.css` — multiple files confirmed acceptable.
@@ -100,17 +99,15 @@ session.
   No tableId — a waitlist entry means no specific table was ever selected; partySize is the
   field any future resolution logic needs instead.
 
-## Screens (7 total — do not add standalone pages beyond these)
+## Screens
 
 | # | Screen | Role | Responsibilities |
 |---|--------|------|-------------------|
 | 1 | Sign Up / Role Picker | both | Profile creation (blank) on first visit; on return from Log Out, same screen pre-fills existing profile fields from `localStorage` (editable) and re-prompts for role |
-| 2 | Dashboard | customer | Edit profile (incl. Log Out control); notification center (RSVP + waitlist status); reservations list with QR codes |
-| 3 | Explore | customer | Restaurant listing; AI-styled concierge filter using profile tags; optional smart-match form (mood/budget/distance) |
+| 2 | Dashboard | customer | Header with Log Out control; persistent sidebar (Profile / Reservations links, scroll-spy active state); Profile: two-column layout (membership badge + avatar left, editable profile form card right); Reservations: confirmed reservations and this guest's waitlist entries in one merged, chronologically-sorted list (visually distinguished by card styling, not a separate panel), with QR codes on confirmed reservations |
+| 3 | Explore | customer | Restaurant listing; AI-styled concierge filter using profile tags ("Find my pick, wisely") |
 | 4 | Restaurant View | customer | Focused overlay with full restaurant detail; entry point to Book Now |
-| 5 | Book Now | customer | Single scrolling flow: table map + lock, live pricing, waitlist join, pre-order, invites + RSVP, bill split, ticket-style summary |
-| 6 | Admin Dashboard | admin | Grid of all restaurants in the store (single implicit admin — no ownership field); add / edit / delete; small Log Out control |
-| 7 | Add / Edit Restaurant | admin | One reusable form: details, table layout, pricing, menu |
+| 5 | Book Now | customer | Table & Time (full-width; includes inline waitlist-join feedback when a slot is full) → once a table is picked, two-column layout: left continues linearly (Pre-Order → Invites & RSVP → Confirm Booking), right is a persistent sticky bill summary (header, pricing breakdown + coupon input, pre-order items, bill split, standalone Total at the bottom) |
 
 **No standalone booking-confirmation screen.** Book Now ends with a loading transition +
 confirmation message, then redirects to Dashboard, where the new reservation (and its QR
@@ -120,9 +117,10 @@ code) appears.
 
 - **Guest:** Sign up → role picker → Explore → Restaurant View (overlay) → Book Now →
   loading/confirm → Dashboard.
-- **Admin:** role picker → Admin Dashboard → Add/Edit Restaurant → back to Admin Dashboard.
+- **Admin:** role picker → no destination screen yet (Admin Dashboard / Add-Edit Restaurant
+  aren't built — see Deferred).
 - **Logout (either role):** Log Out control → clear session-role key only → Screen 1, profile
-  fields pre-filled from `localStorage` → pick role → Explore or Admin Dashboard.
+  fields pre-filled from `localStorage` → pick role → Explore (or Admin's no-op above).
 - Profile persists independently of role — logout/role-switching never re-creates or duplicates
   the profile, only re-prompts for role.
 
@@ -145,10 +143,12 @@ satisfies "tracking," not the fact that a real person responded.
 lock is written to the restaurant's own data (not only the guest's reservation), so the same
 table/slot can't be double-booked.
 
-**Waitlist:** joined from within Book Now when a slot is full. Tracked in the Dashboard
-notification center (no separate screen). Entries are always created with status `waiting`
-and stay that way — there is no promotion to `ready` at all right now (no timers, no
-countdown, no auto-detection, no admin action either).
+**Waitlist:** joined from within Book Now when a slot is full. Tracked in the Dashboard's
+Reservations list — merged into the same chronological list as confirmed reservations, not
+a separate panel or screen, visually distinguished by card styling (e.g. dashed border, no
+QR code). Entries are always created with status `waiting` and stay that way — there is no
+promotion to `ready` at all right now (no timers, no countdown, no auto-detection, no admin
+action either).
 
 **Booking cap:** a max active-reservations limit per guest. Blocks new bookings with a message
 when reached — no extra screen. Exact number: 3.
@@ -164,8 +164,9 @@ if the product direction changes, not things to silently work around.
 
 - **Restaurant photos:** `photoUrl` is a plain hosted image URL string, never a file upload or
   base64 blob — keeps `localStorage` small and avoids needing a file input.
-- **Distance (smart-match):** `distanceMiles` is a static number set like table availability —
-  randomized once at restaurant-creation time, not real geolocation.
+- **Distance:** `distanceMiles` is a static number set like table availability — randomized
+  once at restaurant-creation time, not real geolocation. Shown on restaurant cards and in
+  Restaurant View.
 - **QR code:** rendered as a deterministic visual pattern generated from the reservation ID —
   not required to be actually scannable. Swap in a real QR library later only if "scannable"
   turns out to matter for grading.
@@ -187,3 +188,6 @@ if the product direction changes, not things to silently work around.
 - Exact badge field structure
 - Visual/branding direction (colors, typography) — Screen 1 can be built with placeholder
   styling and restyled later without touching logic
+- Admin Dashboard and Add/Edit Restaurant screens — not built. The Admin role picker option
+  still exists (Session role remains `'customer' | 'admin'`), but picking it has no
+  destination screen yet. Revisit scope/design for these before starting them.

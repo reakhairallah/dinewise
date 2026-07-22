@@ -7,6 +7,7 @@
   z-index: 100;
   display: flex;
   justify-content: center;
+  align-items: center;
   overflow-y: auto;
   padding: var(--space-5) var(--margin-mobile);
 }
@@ -27,12 +28,40 @@
 .restaurant-overlay-panel {
   position: relative;
   width: 100%;
-  max-width: 720px;
-  height: fit-content;
+  max-width: 960px;
+  /* Fixed, not fit-content/vh-relative — this size holds regardless of
+     browser window height. The content column scrolls internally instead
+     of the panel (or the whole page) growing/shrinking to fit content or
+     viewport, so the menu toggle's scroll-into-view always has somewhere
+     to scroll, every time, not just when the window happens to be short.
+     560px specifically: measured collapsed-state content across the seed
+     restaurants tops out around 559px (title/rating/cuisine/badges/toggle
+     row/Book Now), so this leaves minimal empty space in the content
+     column at default (menu-collapsed) length. */
+  height: 560px;
   background-color: var(--color-surface-container);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
   overflow: hidden;
+}
+
+/* Split layout — image on one side, content on the other on wide viewports;
+   stacks (image on top) below 900px. Same breakpoint as Sign Up's
+   .signup-split (styles/screen-signup.css). Both fill the panel's fixed
+   height exactly (no stretching *between* them — the height is fixed
+   regardless of either one's content). */
+.restaurant-overlay-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+  height: 100%;
+}
+
+@media (max-width: 900px) {
+  .restaurant-overlay-split {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
 }
 
 .restaurant-overlay-close {
@@ -62,8 +91,27 @@
   object-fit: cover;
 }
 
+@media (min-width: 901px) {
+  .restaurant-overlay-photo {
+    /* Panel height is fixed (not content-driven), so filling it is safe —
+       it can no longer be "stretched" by the content column growing, since
+       that column now scrolls internally instead of growing the row. */
+    height: 100%;
+    aspect-ratio: auto;
+  }
+}
+
 .restaurant-overlay-body {
   padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  height: 100%;
+  min-height: 0; /* grid items default to min-height:auto, which would let content grow past the row and defeat overflow-y here */
+  overflow-y: auto;
+}
+
+.restaurant-overlay-info {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -81,9 +129,14 @@
 
 .restaurant-menu-toggle {
   margin-top: var(--space-3);
+  border-top: var(--border-ghost);
 }
 
 .restaurant-menu-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: var(--space-2);
   cursor: pointer;
   list-style: none;
   color: var(--color-on-surface);
@@ -91,6 +144,16 @@
 
 .restaurant-menu-summary::-webkit-details-marker {
   display: none;
+}
+
+.restaurant-menu-chevron {
+  flex-shrink: 0;
+  color: var(--color-on-surface-variant);
+  transition: transform 0.15s ease;
+}
+
+.restaurant-menu-toggle[open] .restaurant-menu-chevron {
+  transform: rotate(180deg);
 }
 
 .restaurant-menu-body {
