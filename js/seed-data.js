@@ -34,7 +34,7 @@ function buildSeedRestaurants() {
   return [
     {
       id: crypto.randomUUID(),
-      photoUrl: 'https://picsum.photos/seed/ember-oak/900/600',
+      photoUrl: 'assets/restaurants/ember-oak.png',
       title: 'Ember & Oak',
       cuisine: 'Steakhouse',
       openTime: '17:00',
@@ -57,7 +57,7 @@ function buildSeedRestaurants() {
     },
     {
       id: crypto.randomUUID(),
-      photoUrl: 'https://picsum.photos/seed/salt-tide/900/600',
+      photoUrl: 'assets/restaurants/salt-tide.png',
       title: 'Salt & Tide',
       cuisine: 'Seafood',
       openTime: '16:30',
@@ -103,7 +103,7 @@ function buildSeedRestaurants() {
     },
     {
       id: crypto.randomUUID(),
-      photoUrl: 'https://picsum.photos/seed/trattoria-rosa/900/600',
+      photoUrl: 'assets/restaurants/trattoria-rosa.png',
       title: 'Trattoria Rosa',
       cuisine: 'Italian',
       openTime: '12:00',
@@ -126,7 +126,7 @@ function buildSeedRestaurants() {
     },
     {
       id: crypto.randomUUID(),
-      photoUrl: 'https://picsum.photos/seed/koan/900/600',
+      photoUrl: 'assets/restaurants/koan.png',
       title: 'Kōan',
       cuisine: 'Japanese',
       openTime: '18:00',

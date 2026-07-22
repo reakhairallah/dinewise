@@ -133,7 +133,7 @@ const renderBillSplitRows = (shares) => `
 // active before it's even shown.
 const initScrollSpy = (linkSelector, { anchorY = 120 } = {}) => {
   const links = [...document.querySelectorAll(linkSelector)];
-  if (!links.length) return;
+  if (!links.length) return null;
 
   const sections = links.map((link) => document.querySelector(link.getAttribute('href')));
   let suppressUntil = 0;
@@ -149,23 +149,35 @@ const initScrollSpy = (linkSelector, { anchorY = 120 } = {}) => {
     links.forEach((link, index) => link.classList.toggle('is-active', index === activeIndex));
   };
 
-  links.forEach((link, linkIndex) => {
-    link.addEventListener('click', () => {
-      // A link to a currently-hidden section (Book Now's Pre-Order/Invites
-      // before a table is picked) is still clickable even though its
-      // target isn't — this is the same "skip hidden sections" guard
-      // updateActive() applies via scroll, just applied to the click path
-      // too, so clicking one can't force it active out from under that.
-      const section = sections[linkIndex];
-      if (!section || section.offsetParent === null) return;
+  // Sets is-active immediately and holds it for the ~600ms a resulting
+  // smooth scroll takes to settle — shared by the click handler below and
+  // by any caller driving the scroll programmatically instead of via a
+  // click (e.g. Dashboard.open's scrollToId), which otherwise has no way
+  // to stop updateActive's own scroll listener from immediately reverting
+  // it while the scroll position hasn't caught up yet.
+  const setActive = (href) => {
+    const linkIndex = links.findIndex((link) => link.getAttribute('href') === href);
+    if (linkIndex === -1) return;
 
-      links.forEach((candidate) => candidate.classList.toggle('is-active', candidate === link));
-      suppressUntil = Date.now() + 600;
-    });
+    const section = sections[linkIndex];
+    if (!section || section.offsetParent === null) return;
+
+    links.forEach((candidate, index) => candidate.classList.toggle('is-active', index === linkIndex));
+    suppressUntil = Date.now() + 600;
+  };
+
+  links.forEach((link) => {
+    // A link to a currently-hidden section (Book Now's Pre-Order/Invites
+    // before a table is picked) is still clickable even though its target
+    // isn't — setActive's own "skip hidden sections" guard already covers
+    // that, same as updateActive() does via scroll.
+    link.addEventListener('click', () => setActive(link.getAttribute('href')));
   });
 
   window.addEventListener('scroll', updateActive, { passive: true });
   updateActive();
+
+  return { setActive };
 };
 
 /* =========================================================
@@ -376,7 +388,13 @@ const UI = {
       document.querySelectorAll('.screen').forEach((screen) => {
         screen.hidden = screen.id !== screenId;
       });
-      window.scrollTo(0, 0);
+      // Explicitly instant, not left to inherit html's global
+      // scroll-behavior: smooth — this is a hard navigation reset, not an
+      // animated scroll, and letting it animate races any deliberate smooth
+      // scrollIntoView a caller fires right after (e.g. Dashboard.open's
+      // scrollToId), which was consistently losing to this reset since both
+      // fire in the same tick.
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     },
 
     goToRole(role) {
@@ -1305,7 +1323,7 @@ const UI = {
         if (reservation) UI.ReservationReceipt.open(reservation);
       });
 
-      initScrollSpy('.dashboard-sidebar-link');
+      this.sidebarScrollSpy = initScrollSpy('.dashboard-sidebar-link');
     },
 
     open(scrollToId) {
@@ -1314,7 +1332,23 @@ const UI = {
       this.renderReservations();
       UI.Router.showScreen('screen-dashboard');
       if (scrollToId) {
-        document.getElementById(scrollToId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Same setActive() a real sidebar-link click uses (see
+        // initScrollSpy) — it also suppresses the scroll listener for the
+        // ~600ms this scroll takes to settle, so updateActive() can't
+        // immediately revert it back to whichever link the not-yet-caught-up
+        // scroll position still reads as active.
+        this.sidebarScrollSpy?.setActive(`#${scrollToId}`);
+
+        // Deferred a frame, not called synchronously right after unhiding
+        // the screen — scrollIntoView computed in the same tick as
+        // screen.hidden flipping to false measures against pre-layout
+        // geometry (the section briefly has no real size yet), so the
+        // resulting smooth-scroll animation targets a stale, too-short
+        // distance and stops well short of the actual section. Waiting a
+        // frame lets layout settle first, so the target position is real.
+        requestAnimationFrame(() => {
+          document.getElementById(scrollToId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
       }
     },
 

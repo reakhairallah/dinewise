@@ -19,7 +19,7 @@
 .restaurant-overlay-backdrop {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 60%);
+  background: rgb(var(--foreground-rgb) / 60%);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   z-index: -1;
@@ -39,7 +39,7 @@
      row/Book Now), so this leaves minimal empty space in the content
      column at default (menu-collapsed) length. */
   height: 560px;
-  background-color: var(--color-surface-container);
+  background-color: var(--card);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
   overflow: hidden;
@@ -75,14 +75,14 @@
   width: 36px;
   height: 36px;
   border-radius: var(--radius-full);
-  background-color: rgb(18 20 18 / 60%);
-  color: var(--color-on-surface);
+  background-color: rgb(var(--foreground-rgb) / 60%);
+  color: var(--foreground);
   border: none;
   cursor: pointer;
 }
 
 .restaurant-overlay-close:hover {
-  background-color: rgb(18 20 18 / 85%);
+  background-color: rgb(var(--foreground-rgb) / 85%);
 }
 
 .restaurant-overlay-photo {
@@ -98,6 +98,19 @@
        that column now scrolls internally instead of growing the row. */
     height: 100%;
     aspect-ratio: auto;
+    /* Grid items default to min-height:auto — for a replaced element with
+       overflow:visible (the default), that resolves to a content-based
+       floor derived from the image's *intrinsic* aspect ratio, not the
+       aspect-ratio:auto override above. A wide/landscape placeholder's
+       intrinsic ratio stayed under 560px and never surfaced this, but a
+       tall/portrait real photo (e.g. ember-oak.png, ~848x1264) computes a
+       floor of width × (1264/848) ≈ 715px — well past the panel's fixed
+       560px — which silently grows the whole row/panel past its intended
+       height and breaks .restaurant-overlay-body's internal scroll (the
+       menu toggle's scrollIntoView-based auto-scroll) along with it. Same
+       fix as .restaurant-overlay-body below, just needed on the image too.
+    */
+    min-height: 0;
   }
 }
 
@@ -129,7 +142,7 @@
 
 .restaurant-menu-toggle {
   margin-top: var(--space-3);
-  border-top: var(--border-ghost);
+  border-top: 1px solid var(--border);
 }
 
 .restaurant-menu-summary {
@@ -139,7 +152,7 @@
   padding-block: var(--space-2);
   cursor: pointer;
   list-style: none;
-  color: var(--color-on-surface);
+  color: var(--foreground);
 }
 
 .restaurant-menu-summary::-webkit-details-marker {
@@ -187,7 +200,7 @@
 }
 
 .menu-item-name {
-  color: var(--color-on-surface);
+  color: var(--foreground);
 }
 
 .menu-item-price {

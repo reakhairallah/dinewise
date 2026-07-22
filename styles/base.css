@@ -1,32 +1,50 @@
-/* =========================================================
-   Nocturne Reserve — design tokens (source: DESIGN.md)
-   ========================================================= */
 :root {
-  /* Color — surfaces */
-  --color-surface: #121412;
-  --color-surface-dim: #121412;
-  --color-surface-bright: #383a37;
-  --color-surface-container-lowest: #0d0f0d;
-  --color-surface-container-low: #1a1c1a;
-  --color-surface-container: #1e201e;
-  --color-surface-container-high: #282a28;
-  --color-surface-container-highest: #333533;
-  --color-surface-variant: #333533;
-  --color-background: #121412;
+  /* Color — simplified token set, mapped exactly from the real theme
+     palette (shadcn/Tailwind-style naming, no "--color-" prefix — replaces
+     the old M3-derived surface-container ladder entirely). -rgb companions
+     exist only to support rgb(var(--x-rgb) / alpha%) usage (nav glass,
+     overlay backdrop/close circle), same pattern as --color-primary-rgb
+     below. */
+  --background: #f5f1e6;
+  --background-rgb: 245 241 230;
+  --foreground: #4a3f35;
+  --foreground-rgb: 74 63 53;
 
-  /* Color — on-surface / outline */
-  --color-on-surface: #e2e3df;
-  --color-on-surface-variant: #d1c5b4;
+  --card: #fffcf5;
+  --card-foreground: #4a3f35;
+  --popover: #fffcf5;
+  --popover-foreground: #4a3f35;
+
+  --primary: #a67c52;
+  --primary-foreground: #ffffff;
+  --secondary: #e2d8c3;
+  --secondary-foreground: #5c4d3f;
+  --muted: #ece5d8;
+  --muted-foreground: #7d6b56;
+  --accent: #d4c8aa;
+  --accent-foreground: #4a3f35;
+  --destructive: #b54a35;
+  --destructive-foreground: #ffffff;
+
+  --border: #dbd0ba;
+  --input: #dbd0ba;
+  --ring: #a67c52;
+
+  /* Legacy M3 tokens — NOT part of this simplification pass, left exactly
+     as-is because nothing above replaces them: --color-on-surface-variant
+     (secondary/muted text everywhere), --color-outline-variant (borders),
+     --color-primary-fixed (button/badge hover tints), --color-secondary
+     (only used inside --gradient-ai below), --color-inverse-surface/
+     -on-surface (the unused .ledger component). The rest here
+     (containers/fixed variants/etc.) are already-unused DESIGN.md leftovers,
+     kept rather than deleted since removing them wasn't asked for. */
+  --color-on-surface-variant: #7a706a;
   --color-on-background: #e2e3df;
   --color-inverse-surface: #e2e3df;
   --color-inverse-on-surface: #2f312e;
   --color-outline: #9a8f80;
   --color-outline-variant: #4e4639;
-
-  /* Color — primary (brass/gold) */
   --color-surface-tint: #e9c176;
-  --color-primary: #e9c176;
-  --color-on-primary: #412d00;
   --color-primary-container: #c5a059;
   --color-on-primary-container: #4e3700;
   --color-inverse-primary: #775a19;
@@ -34,36 +52,24 @@
   --color-primary-fixed-dim: #e9c176;
   --color-on-primary-fixed: #261900;
   --color-on-primary-fixed-variant: #5d4201;
-
-  /* Color — secondary (walnut) */
   --color-secondary: #dec1af;
   --color-on-secondary: #3f2c20;
-  --color-secondary-container: #574335;
-  --color-on-secondary-container: #ccb09f;
   --color-secondary-fixed: #fbddca;
   --color-secondary-fixed-dim: #dec1af;
   --color-on-secondary-fixed: #28180d;
   --color-on-secondary-fixed-variant: #574335;
-
-  /* Color — tertiary */
-  --color-tertiary: #c8c6c5;
-  --color-on-tertiary: #313030;
   --color-tertiary-container: #a7a5a5;
   --color-on-tertiary-container: #3b3b3b;
   --color-tertiary-fixed: #e5e2e1;
   --color-tertiary-fixed-dim: #c8c6c5;
   --color-on-tertiary-fixed: #1c1b1b;
   --color-on-tertiary-fixed-variant: #474746;
-
-  /* Color — error */
-  --color-error: #ffb4ab;
-  --color-on-error: #690005;
   --color-error-container: #93000a;
   --color-on-error-container: #ffdad6;
 
   /* Typography */
-  --font-serif: 'Manrope', var(--font-sans);
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: 'Fraunces', var(--font-sans);
+  --font-sans: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;
 
   --text-display-lg-size: 48px;
   --text-display-lg-weight: 600;
@@ -123,13 +129,12 @@
   --margin-mobile: 20px;
 
   /* Elevation */
-  --shadow-card: 0 8px 20px rgba(0, 0, 0, 0.4);
-  --border-ghost: 1px solid rgb(197 160 89 / 30%);
+  --shadow-card: 2px 3px 5px 0px hsl(28 13% 20% / 0.12), 2px 1px 2px -1px hsl(28 13% 20% / 0.12);
   --blur-nav: 20px;
 
   /* AI-flavored accent (Explore's "Find my pick, wisely" / recommendation treatment) */
-  --color-primary-rgb: 233 193 118;
-  --gradient-ai: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  --color-primary-rgb: 166 124 82;
+  --gradient-ai: linear-gradient(135deg, var(--primary) 0%, var(--color-secondary) 100%);
   --shadow-glow-ai: 0 0 0 1px rgb(var(--color-primary-rgb) / 40%), 0 0 18px rgb(var(--color-primary-rgb) / 35%);
   --shadow-glow-ai-card: 0 0 24px rgb(var(--color-primary-rgb) / 30%);
 }
@@ -158,7 +163,7 @@ dd {
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
   scroll-behavior: smooth;
 }
 
@@ -168,8 +173,8 @@ body {
   font-size: var(--text-body-md-size);
   font-weight: var(--text-body-md-weight);
   line-height: var(--text-body-md-leading);
-  color: var(--color-on-surface);
-  background-color: var(--color-background);
+  color: var(--foreground);
+  background-color: var(--background);
 }
 
 /* Each screen is a full section shown/hidden by app.js; only one is visible at a time. */

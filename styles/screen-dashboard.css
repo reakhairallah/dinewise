@@ -2,7 +2,7 @@
    Screen 2 — Dashboard
    ========================================================= */
 .dashboard-title {
-  color: var(--color-on-surface);
+  color: var(--foreground);
   white-space: nowrap;
 }
 
@@ -61,8 +61,8 @@
 }
 
 .dashboard-sidebar-link.is-active {
-  border-left-color: var(--color-primary);
-  color: var(--color-on-surface);
+  border-left-color: var(--primary);
+  color: var(--foreground);
 }
 
 .dashboard-main {
@@ -114,7 +114,7 @@
 }
 
 .dashboard-profile-card:hover {
-  background-color: var(--color-surface-container);
+  background-color: var(--card);
 }
 
 /* Wider now that the side column is slim — spread fields across a 3-column
@@ -216,7 +216,7 @@
 
 .dashboard-ring-fill {
   fill: none;
-  stroke: var(--color-primary);
+  stroke: var(--primary);
   stroke-width: 8;
   stroke-linecap: round;
   transition: stroke-dashoffset 0.3s ease;
@@ -238,7 +238,7 @@
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   font-size: 20px;
-  color: var(--color-on-surface);
+  color: var(--foreground);
 }
 
 .dashboard-ring-label {
@@ -264,8 +264,8 @@
 }
 
 .dashboard-membership-badge.is-member {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .dashboard-reservations-list {
@@ -281,7 +281,7 @@
   justify-content: space-between;
   gap: var(--space-4);
   padding: var(--space-4);
-  background-color: var(--color-surface-container);
+  background-color: var(--card);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
 }
@@ -292,7 +292,7 @@
 }
 
 .dashboard-reservation-note {
-  color: var(--color-primary);
+  color: var(--primary);
   margin-top: var(--space-1);
 }
 
@@ -304,7 +304,7 @@
   padding: 0;
   border: none;
   background: none;
-  color: var(--color-on-surface);
+  color: var(--foreground);
   cursor: pointer;
   border-radius: var(--radius-sm);
   transition: opacity 0.15s ease;
@@ -313,7 +313,7 @@
 .dashboard-reservation-qr:hover,
 .dashboard-reservation-qr:focus-visible {
   opacity: 0.75;
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -355,7 +355,7 @@
   max-height: 85vh;
   overflow-y: auto;
   padding: var(--space-5) var(--space-4) var(--space-4);
-  background-color: var(--color-surface-container);
+  background-color: var(--card);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
 }

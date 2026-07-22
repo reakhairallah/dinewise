@@ -32,12 +32,12 @@
 }
 
 .signup-eyebrow {
-  color: var(--color-primary);
+  color: var(--primary);
   margin-bottom: var(--space-2);
 }
 
 .signup-hero-title {
-  color: var(--color-on-surface);
+  color: var(--foreground);
 }
 
 .signup-tagline {
@@ -51,7 +51,7 @@
 }
 
 .signup-profile-card:hover {
-  background-color: var(--color-surface-container);
+  background-color: var(--card);
 }
 
 /* Dining Persona — the guest-only chip groups, grouped in one dashed-border
@@ -87,7 +87,7 @@
 }
 
 .form-fieldset legend {
-  color: var(--color-on-surface);
+  color: var(--foreground);
   margin-bottom: var(--space-1);
   padding: 0;
 }
@@ -98,7 +98,7 @@
 }
 
 .field-error {
-  color: var(--color-error);
+  color: var(--destructive);
   margin-top: var(--space-1);
 }
 
@@ -138,7 +138,7 @@
   gap: var(--space-1);
   padding: var(--space-4);
   border-radius: var(--radius-lg);
-  background-color: var(--color-surface-container);
+  background-color: var(--card);
   border: 1px solid var(--color-outline-variant);
   box-shadow: var(--shadow-card);
   transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
@@ -149,7 +149,7 @@
 }
 
 .role-card-title {
-  color: var(--color-on-surface);
+  color: var(--foreground);
 }
 
 .role-card-desc {
@@ -165,12 +165,12 @@
 }
 
 .role-input:checked + .role-card-body {
-  background-color: var(--color-secondary-container);
-  border-color: var(--color-primary);
+  background-color: var(--secondary);
+  border-color: var(--primary);
 }
 
 .role-input:focus-visible + .role-card-body {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
