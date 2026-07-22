@@ -14,7 +14,10 @@ const dateTimeSlot = (daysFromNow, hour) => {
 
 const SEED_SLOT_POOL = [1, 2, 3, 4].flatMap((daysFromNow) => [18, 19, 20].map((hour) => dateTimeSlot(daysFromNow, hour)));
 
-const createTable = (capacity) => {
+// `number` is purely a per-restaurant display label ("Table 3") — 1-indexed
+// by creation order, distinct from `id`, which stays the only thing locks/
+// selection logic ever key or match on.
+const createTable = (capacity, number) => {
   const locks = {};
   const lockCount = Math.floor(Math.random() * 3); // 0-2 pre-locked slots
 
@@ -23,14 +26,98 @@ const createTable = (capacity) => {
     locks[slot] = true;
   }
 
-  return { id: crypto.randomUUID(), capacity, locks };
+  return { id: crypto.randomUUID(), number, capacity, locks };
 };
 
-const createTableLayout = (capacities) => capacities.map(createTable);
+const createTableLayout = (capacities) => capacities.map((capacity, i) => createTable(capacity, i + 1));
 
 const randomDistance = (min, max) => Math.round((Math.random() * (max - min) + min) * 10) / 10;
 
+// Seat counts and hotspot coordinates lifted from reference/ember-oak-table-map.html's
+// TABLES array (t1-t10, in that order) — the demo's own ids/status field are throwaway,
+// but its seats/xPct/yPct are the real calibrated data for this photo. tableLayout below
+// is built from EMBER_OAK_TABLE_SEATS in this same order, so index i in either array
+// refers to the same physical table (see buildSeedRestaurants' emberOakTableHotspots).
+const EMBER_OAK_TABLE_SEATS = [5, 5, 4, 4, 4, 4, 4, 4, 5, 4];
+const EMBER_OAK_HOTSPOT_COORDS = [
+  { xPct: 72.6, yPct: 59.1 },
+  { xPct: 50.6, yPct: 79.4 },
+  { xPct: 30.1, yPct: 71.2 },
+  { xPct: 49.8, yPct: 52.6 },
+  { xPct: 59.7, yPct: 44.8 },
+  { xPct: 47.7, yPct: 40.3 },
+  { xPct: 38.7, yPct: 44.4 },
+  { xPct: 21.9, yPct: 53.3 },
+  { xPct: 33.2, yPct: 38.6 },
+  { xPct: 40.9, yPct: 36.2 },
+];
+
+// Same approach, from reference/salt-tide-table-map.html's TABLES array
+// (t1-t8, in that order).
+const SALT_TIDE_TABLE_SEATS = [6, 6, 4, 4, 5, 4, 2, 2];
+const SALT_TIDE_HOTSPOT_COORDS = [
+  { xPct: 70.6, yPct: 66.0 },
+  { xPct: 80.9, yPct: 41.4 },
+  { xPct: 18.2, yPct: 47.4 },
+  { xPct: 42.3, yPct: 36.6 },
+  { xPct: 55.6, yPct: 23.9 },
+  { xPct: 66.2, yPct: 20.4 },
+  { xPct: 72.2, yPct: 17.4 },
+  { xPct: 87.2, yPct: 22.7 },
+];
+
+// Same approach, from reference/koan-table-map.html's TABLES array (t1-t9,
+// in that order).
+const KOAN_TABLE_SEATS = [4, 4, 4, 2, 4, 2, 4, 2, 2];
+const KOAN_HOTSPOT_COORDS = [
+  { xPct: 26.1, yPct: 75.2 },
+  { xPct: 63.9, yPct: 74.3 },
+  { xPct: 60.5, yPct: 49.4 },
+  { xPct: 46.6, yPct: 49.2 },
+  { xPct: 31.5, yPct: 49.2 },
+  { xPct: 37.5, yPct: 32.6 },
+  { xPct: 51.8, yPct: 32.7 },
+  { xPct: 53.7, yPct: 24.7 },
+  { xPct: 40.4, yPct: 24.7 },
+];
+
+// Same approach, from reference/trattoria-rosa-table-map.html's TABLES array
+// (t1-t10, in that order).
+const TRATTORIA_ROSA_TABLE_SEATS = [2, 4, 4, 4, 4, 4, 4, 4, 4, 8];
+const TRATTORIA_ROSA_HOTSPOT_COORDS = [
+  { xPct: 94.7, yPct: 71.1 },
+  { xPct: 58.6, yPct: 76.9 },
+  { xPct: 10.4, yPct: 78.3 },
+  { xPct: 8.3,  yPct: 60.4 },
+  { xPct: 8.8,  yPct: 52.6 },
+  { xPct: 28.0, yPct: 50.1 },
+  { xPct: 42.3, yPct: 46.5 },
+  { xPct: 51.9, yPct: 50.5 },
+  { xPct: 65.3, yPct: 57.4 },
+  { xPct: 37.2, yPct: 58.1 },
+];
+
 function buildSeedRestaurants() {
+  const emberOakTableLayout = createTableLayout(EMBER_OAK_TABLE_SEATS);
+  const emberOakTableHotspots = Object.fromEntries(
+    emberOakTableLayout.map((table, i) => [table.id, EMBER_OAK_HOTSPOT_COORDS[i]]),
+  );
+
+  const saltTideTableLayout = createTableLayout(SALT_TIDE_TABLE_SEATS);
+  const saltTideTableHotspots = Object.fromEntries(
+    saltTideTableLayout.map((table, i) => [table.id, SALT_TIDE_HOTSPOT_COORDS[i]]),
+  );
+
+  const koanTableLayout = createTableLayout(KOAN_TABLE_SEATS);
+  const koanTableHotspots = Object.fromEntries(
+    koanTableLayout.map((table, i) => [table.id, KOAN_HOTSPOT_COORDS[i]]),
+  );
+
+  const trattoriaRosaTableLayout = createTableLayout(TRATTORIA_ROSA_TABLE_SEATS);
+  const trattoriaRosaTableHotspots = Object.fromEntries(
+    trattoriaRosaTableLayout.map((table, i) => [table.id, TRATTORIA_ROSA_HOTSPOT_COORDS[i]]),
+  );
+
   return [
     {
       id: crypto.randomUUID(),
@@ -44,7 +131,9 @@ function buildSeedRestaurants() {
       sustainabilityBadges: ['Locally Sourced', 'Zero Food Waste'],
       allergenCautions: ['Nuts', 'Gluten'],
       dietaryBadges: [],
-      tableLayout: createTableLayout([2, 2, 4, 4, 6, 8]),
+      tableLayout: emberOakTableLayout,
+      tableMapImage: 'assets/restaurants/ember-oak-map.png',
+      tableHotspots: emberOakTableHotspots,
       pricing: {
         basePrice: 30,
       },
@@ -67,7 +156,9 @@ function buildSeedRestaurants() {
       sustainabilityBadges: ['Sustainable Seafood', 'Compostable Packaging'],
       allergenCautions: ['Shellfish', 'Fish'],
       dietaryBadges: ['Gluten-Free-Friendly'],
-      tableLayout: createTableLayout([2, 2, 2, 4, 4, 6]),
+      tableLayout: saltTideTableLayout,
+      tableMapImage: 'assets/restaurants/salt-tide-map.png',
+      tableHotspots: saltTideTableHotspots,
       pricing: {
         basePrice: 22,
       },
@@ -76,29 +167,6 @@ function buildSeedRestaurants() {
         { id: crypto.randomUUID(), category: 'Mains', name: 'Miso-Glazed Black Cod', description: 'Charred bok choy, ginger scallion oil.', price: 48 },
         { id: crypto.randomUUID(), category: 'Mains', name: 'Lobster Linguine', description: 'Butter-poached lobster, chili, lemon.', price: 52 },
         { id: crypto.randomUUID(), category: 'Desserts', name: 'Yuzu Panna Cotta', description: 'Candied ginger, shortbread crumble.', price: 13 },
-      ],
-    },
-    {
-      id: crypto.randomUUID(),
-      photoUrl: 'https://picsum.photos/seed/lumen-table/900/600',
-      title: 'Lumen Table',
-      cuisine: 'French',
-      openTime: '17:30',
-      closeTime: '23:30',
-      rating: 4.8,
-      distanceMiles: randomDistance(0.4, 6),
-      sustainabilityBadges: ['Farm-to-Table', 'Locally Sourced'],
-      allergenCautions: ['Dairy', 'Gluten'],
-      dietaryBadges: ['Vegetarian-Friendly'],
-      tableLayout: createTableLayout([2, 2, 4, 4, 6]),
-      pricing: {
-        basePrice: 35,
-      },
-      menuItems: [
-        { id: crypto.randomUUID(), category: 'Starters', name: 'Duck Liver Parfait', description: 'Brioche, fig compote, port reduction.', price: 22 },
-        { id: crypto.randomUUID(), category: 'Mains', name: 'Coq au Vin', description: 'Braised chicken, pearl onion, red wine jus.', price: 46 },
-        { id: crypto.randomUUID(), category: 'Mains', name: 'Seared Duck Breast', description: 'Cherry gastrique, root vegetable purée.', price: 54 },
-        { id: crypto.randomUUID(), category: 'Desserts', name: 'Chocolate Soufflé', description: 'Warm dark chocolate, crème anglaise.', price: 16 },
       ],
     },
     {
@@ -113,7 +181,9 @@ function buildSeedRestaurants() {
       sustainabilityBadges: ['Locally Sourced'],
       allergenCautions: ['Gluten', 'Dairy', 'Eggs'],
       dietaryBadges: ['Vegetarian-Friendly', 'Vegan-Friendly'],
-      tableLayout: createTableLayout([2, 2, 2, 4, 6]),
+      tableLayout: trattoriaRosaTableLayout,
+      tableMapImage: 'assets/restaurants/trattoria-rosa-map.png',
+      tableHotspots: trattoriaRosaTableHotspots,
       pricing: {
         basePrice: 18,
       },
@@ -136,7 +206,9 @@ function buildSeedRestaurants() {
       sustainabilityBadges: ['Sustainable Seafood', 'Zero Food Waste'],
       allergenCautions: ['Shellfish', 'Soy', 'Fish'],
       dietaryBadges: ['Gluten-Free-Friendly'],
-      tableLayout: createTableLayout([2, 2, 4]),
+      tableLayout: koanTableLayout,
+      tableMapImage: 'assets/restaurants/koan-map.png',
+      tableHotspots: koanTableHotspots,
       pricing: {
         basePrice: 45,
       },
@@ -145,75 +217,6 @@ function buildSeedRestaurants() {
         { id: crypto.randomUUID(), category: 'Mains', name: 'Omakase Nigiri (10pc)', description: 'Chef\'s selection, seasonal catch.', price: 95 },
         { id: crypto.randomUUID(), category: 'Mains', name: 'Wagyu Tataki', description: 'A5 wagyu, ponzu, crisped garlic.', price: 62 },
         { id: crypto.randomUUID(), category: 'Desserts', name: 'Matcha Pot de Crème', description: 'Ceremonial matcha, black sesame tuile.', price: 15 },
-      ],
-    },
-    {
-      id: crypto.randomUUID(),
-      photoUrl: 'https://picsum.photos/seed/verdant-table/900/600',
-      title: 'Verdant Table',
-      cuisine: 'Mediterranean',
-      openTime: '11:00',
-      closeTime: '21:00',
-      rating: 4.4,
-      distanceMiles: randomDistance(0.4, 6),
-      sustainabilityBadges: ['Farm-to-Table', 'Zero Food Waste', 'Compostable Packaging'],
-      allergenCautions: ['Nuts', 'Sesame'],
-      dietaryBadges: ['Vegetarian-Friendly', 'Vegan-Friendly', 'Gluten-Free-Friendly'],
-      tableLayout: createTableLayout([2, 2, 4, 4]),
-      pricing: {
-        basePrice: 15,
-      },
-      menuItems: [
-        { id: crypto.randomUUID(), category: 'Starters', name: 'Whipped Hummus Trio', description: 'Beet, roasted garlic, harissa; warm pita.', price: 14 },
-        { id: crypto.randomUUID(), category: 'Mains', name: 'Charred Cauliflower Steak', description: 'Tahini, pomegranate, toasted pistachio.', price: 24 },
-        { id: crypto.randomUUID(), category: 'Mains', name: 'Grilled Halloumi Bowl', description: 'Farro, roasted vegetables, sumac vinaigrette.', price: 22 },
-        { id: crypto.randomUUID(), category: 'Desserts', name: 'Orange Blossom Semolina Cake', description: 'Citrus syrup, candied pistachio.', price: 11 },
-      ],
-    },
-    {
-      id: crypto.randomUUID(),
-      photoUrl: 'https://picsum.photos/seed/saffron-house/900/600',
-      title: 'Saffron House',
-      cuisine: 'Indian',
-      openTime: '17:00',
-      closeTime: '22:30',
-      rating: 4.2,
-      distanceMiles: randomDistance(0.4, 6),
-      sustainabilityBadges: ['Locally Sourced'],
-      allergenCautions: ['Dairy', 'Nuts', 'Gluten'],
-      dietaryBadges: ['Vegetarian-Friendly', 'Vegan-Friendly', 'Halal-Friendly'],
-      tableLayout: createTableLayout([2, 4, 4, 6, 8]),
-      pricing: {
-        basePrice: 16,
-      },
-      menuItems: [
-        { id: crypto.randomUUID(), category: 'Starters', name: 'Tandoori Vegetable Skewers', description: 'Charred peppers, paneer, mint chutney.', price: 15 },
-        { id: crypto.randomUUID(), category: 'Mains', name: 'Lamb Rogan Josh', description: 'Kashmiri chili, yogurt, basmati rice.', price: 32 },
-        { id: crypto.randomUUID(), category: 'Mains', name: 'Chana Masala', description: 'Slow-simmered chickpeas, tomato, ginger.', price: 21 },
-        { id: crypto.randomUUID(), category: 'Desserts', name: 'Saffron Kulfi', description: 'Pistachio, cardamom, rosewater.', price: 10 },
-      ],
-    },
-    {
-      id: crypto.randomUUID(),
-      photoUrl: 'https://picsum.photos/seed/casa-marisol/900/600',
-      title: 'Casa Marisol',
-      cuisine: 'Mexican',
-      openTime: '12:00',
-      closeTime: '23:00',
-      rating: 4.6,
-      distanceMiles: randomDistance(0.4, 6),
-      sustainabilityBadges: ['Locally Sourced', 'Compostable Packaging'],
-      allergenCautions: ['Dairy', 'Corn'],
-      dietaryBadges: ['Vegetarian-Friendly', 'Gluten-Free-Friendly'],
-      tableLayout: createTableLayout([2, 2, 4, 4, 6]),
-      pricing: {
-        basePrice: 18,
-      },
-      menuItems: [
-        { id: crypto.randomUUID(), category: 'Starters', name: 'Esquites', description: 'Charred corn, cotija, chili-lime crema.', price: 12 },
-        { id: crypto.randomUUID(), category: 'Mains', name: 'Al Pastor Tacos', description: 'Achiote-marinated pork, pineapple, cilantro.', price: 24 },
-        { id: crypto.randomUUID(), category: 'Mains', name: 'Mole Poblano Enchiladas', description: 'Slow-simmered mole, queso fresco.', price: 27 },
-        { id: crypto.randomUUID(), category: 'Desserts', name: 'Churros con Chocolate', description: 'Cinnamon sugar, dark chocolate dip.', price: 9 },
       ],
     },
   ];

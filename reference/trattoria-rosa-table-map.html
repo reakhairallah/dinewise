@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Trattoria Rosa — Table Map</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #14100c; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow: hidden; }
+  #scene { position: relative; width: 100vw; height: 100vh; background-image: url('trattoria-rosa-map.png'); background-size: cover; background-position: center; }
+
+  #hud { position: absolute; top: 20px; left: 20px; color: #fff; z-index: 10; pointer-events: none; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
+  #hud h1 { font-size: 15px; font-weight: 600; margin: 0 0 4px 0; }
+  #hud p { font-size: 12px; margin: 0; color: #e8e0d5; }
+
+  #legend { position: absolute; bottom: 20px; left: 20px; display: flex; gap: 16px; z-index: 10; color: #fff; font-size: 12px; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; box-shadow: 0 0 0 1px rgba(255,255,255,0.6); }
+
+  .hotspot {
+    position: absolute; width: 28px; height: 28px; margin-left: -14px; margin-top: -14px;
+    border-radius: 50%; border: 2px solid rgba(255,255,255,0.9);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; z-index: 5;
+    animation: pulse 2.4s ease-out infinite;
+    transition: transform 0.15s ease;
+  }
+  .hotspot:hover { transform: scale(1.15); }
+  .hotspot.locked { cursor: not-allowed; animation: none; opacity: 0.9; }
+  .hotspot span { color: #fff; font-size: 10px; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255,255,255,0.5); }
+    70%  { box-shadow: 0 0 0 14px rgba(255,255,255,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  }
+
+  #panel {
+    position: absolute; top: 20px; right: 20px; width: 220px;
+    background: rgba(20,16,12,0.88); border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; padding: 16px; color: #f2f0eb; z-index: 10;
+    opacity: 0; transform: translateY(-6px); transition: opacity 0.2s ease, transform 0.2s ease;
+    backdrop-filter: blur(6px);
+  }
+  #panel.visible { opacity: 1; transform: translateY(0); }
+  #panel .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #b6ab98; margin-bottom: 2px; }
+  #panel .value { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+  #panel button { width: 100%; padding: 9px 0; border: none; border-radius: 6px; background: #d97757; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+  #panel button:disabled { background: #4a4640; color: #a09a8f; cursor: not-allowed; }
+</style>
+</head>
+<body>
+<div id="scene"></div>
+
+<div id="hud">
+  <h1>Trattoria Rosa — Table Map</h1>
+  <p>10 tables (incl. 1 communal bench table)</p>
+</div>
+
+<div id="legend">
+  <div class="legend-item"><span class="dot" style="background:#3fae5c"></span>Available</div>
+  <div class="legend-item"><span class="dot" style="background:#c0433c"></span>Locked</div>
+  <div class="legend-item"><span class="dot" style="background:#d9a83f"></span>Selected</div>
+</div>
+
+<div id="panel">
+  <div class="label">Table</div>
+  <div class="value" id="panel-name">—</div>
+  <div class="label">Seats</div>
+  <div class="value" id="panel-seats">—</div>
+  <button id="panel-btn" disabled>Select this table</button>
+</div>
+
+<script>
+// ---------- Trattoria Rosa table layout ----------
+// xPct/yPct come directly from your calibration clicks, in click order (t1-t10).
+// Seat counts are my best guess from position/table size in the photo — flag
+// any that look wrong and I'll adjust before this goes to Claude Code.
+const TABLES = [
+  { id: 't1',  seats: 2, status: 'available', xPct: 94.7, yPct: 71.1 },
+  { id: 't2',  seats: 4, status: 'available', xPct: 58.6, yPct: 76.9 },
+  { id: 't3',  seats: 4, status: 'locked',    xPct: 10.4, yPct: 78.3 },
+  { id: 't4',  seats: 4, status: 'available', xPct: 8.3,  yPct: 60.4 },
+  { id: 't5',  seats: 4, status: 'available', xPct: 8.8,  yPct: 52.6 },
+  { id: 't6',  seats: 4, status: 'locked',    xPct: 28.0, yPct: 50.1 },
+  { id: 't7',  seats: 4, status: 'available', xPct: 42.3, yPct: 46.5 },
+  { id: 't8',  seats: 4, status: 'available', xPct: 51.9, yPct: 50.5 },
+  { id: 't9',  seats: 4, status: 'available', xPct: 65.3, yPct: 57.4 },
+  { id: 't10', seats: 8, status: 'available', xPct: 37.2, yPct: 58.1 }, // communal bench table
+];
+
+const COLORS = { available: '#3fae5c', locked: '#c0433c', selected: '#d9a83f' };
+const scene = document.getElementById('scene');
+const hotspotEls = {};
+
+function drawHotspot(t) {
+  const dot = document.createElement('div');
+  dot.className = 'hotspot' + (t.status === 'locked' ? ' locked' : '');
+  dot.style.left = t.xPct + '%';
+  dot.style.top = t.yPct + '%';
+  dot.style.background = COLORS[t.status];
+  dot.innerHTML = `<span>${t.seats}</span>`;
+  dot.addEventListener('click', () => selectTable(t.id));
+  scene.appendChild(dot);
+  hotspotEls[t.id] = dot;
+}
+
+function selectTable(tableId) {
+  const data = TABLES.find(t => t.id === tableId);
+  if (!data || data.status === 'locked') return;
+
+  TABLES.forEach(t => { if (t.status === 'selected') t.status = 'available'; });
+  data.status = 'selected';
+  refreshVisuals();
+
+  document.getElementById('panel-name').textContent = tableId.toUpperCase();
+  document.getElementById('panel-seats').textContent = data.seats + ' seats';
+  document.getElementById('panel-btn').disabled = false;
+  document.getElementById('panel-btn').textContent = 'Table selected ✓';
+  document.getElementById('panel').classList.add('visible');
+}
+
+function refreshVisuals() {
+  TABLES.forEach(t => {
+    hotspotEls[t.id].style.background = COLORS[t.status];
+    hotspotEls[t.id].classList.toggle('locked', t.status === 'locked');
+  });
+}
+
+TABLES.forEach(drawHotspot);
+</script>
+</body>
+</html>

@@ -177,6 +177,7 @@
 .signup-submit {
   width: 100%;
   margin-top: var(--space-2);
-  padding-block: var(--space-3);
+  padding-block: 20px;
+  padding-inline: 20px;
   font-size: 15px;
 }

@@ -710,6 +710,7 @@ const UI = {
       this.timeSummary = document.getElementById('book-now-time-summary');
       this.timeSlotsList = document.getElementById('book-now-time-slots');
       this.tableList = document.getElementById('book-now-tables');
+      this.preOrderSection = document.getElementById('book-now-preorder');
       this.couponInput = document.getElementById('book-now-coupon');
       this.pricingBreakdown = document.getElementById('book-now-pricing-breakdown');
       this.waitlistStatus = document.getElementById('book-now-waitlist-status');
@@ -908,10 +909,18 @@ const UI = {
       this.selectedTime = time;
       this.resetTableSelection();
       this.timeSummary.textContent = formatTime12h(time);
-      this.timePicker.removeAttribute('open');
+      // Stays open here (unlike joinWaitlist()/open(), which close it) —
+      // picking a time is the start of a linear flow into table selection,
+      // so the picker should only close when the guest explicitly collapses
+      // it themselves, not auto-close and hide the very slot they just picked.
 
       this.renderAvailableTables();
       this.renderPricing();
+
+      // Same auto-scroll pattern as selectTable()'s scroll into Pre-Order —
+      // carries the guest down to the table map right after picking a time,
+      // instead of leaving them to scroll past the (still-open) time picker.
+      this.tableList.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
 
     // A table pick only ever applies to the exact party size/date/time it
@@ -924,9 +933,29 @@ const UI = {
     // waitlist for X" message stale, so it goes back to hidden too
     // (joinWaitlist() is the only place that un-hides it).
     resetTableSelection() {
+      this.releaseSelectedTableLock();
       this.selectedTableId = null;
+      this.selectedTableDateTime = null;
       this.bookNowSplit.hidden = true;
       this.hideWaitlistStatus();
+    },
+
+    // Releases the lock for whatever table this session currently has picked
+    // (if any) — used both by resetTableSelection() (party size/date/time
+    // changed, or a fresh table pick under the same combination) and by
+    // confirmBooking() indirectly not calling this at all (see below, a
+    // confirmed booking's lock must stick). selectedTableDateTime is tracked
+    // separately from the live date/time inputs specifically so this always
+    // releases the slot the lock was actually written under, even after the
+    // inputs have already moved on to a new value.
+    releaseSelectedTableLock() {
+      if (!this.selectedTableId || !this.selectedTableDateTime) return;
+
+      const table = this.restaurant.tableLayout.find((candidate) => candidate.id === this.selectedTableId);
+      if (!table) return;
+
+      delete table.locks[this.selectedTableDateTime];
+      Restaurants.set(this.restaurant);
     },
 
     hideWaitlistStatus() {
@@ -967,18 +996,78 @@ const UI = {
         return;
       }
 
+      // Any restaurant with both fields gets the photo + hotspot-dot map;
+      // everything else keeps the plain button list below. Neither branch is
+      // Ember & Oak-specific — this only reacts to data on this.restaurant.
+      if (this.restaurant.tableMapImage && this.restaurant.tableHotspots) {
+        this.renderTableHotspotMap(partySize, dateTime);
+        return;
+      }
+
       this.tableList.innerHTML = available.map((table) => `
         <button type="button" class="btn btn-secondary book-now-table-option" data-table-id="${table.id}">
-          Table ${table.id.slice(0, 8)} — Seats ${table.capacity}
+          Table ${table.number} — Seats ${table.capacity}
         </button>
       `).join('');
     },
 
-    // The function a future visual table map will call when a table is
-    // clicked. The lock is written to the restaurant's own tableLayout (via
-    // Restaurants.set), not just kept on this screen — per CLAUDE.md, that's
-    // what stops the same table/slot from being double-booked, since the
-    // dataset is shared across every guest browsing the same restaurant.
+    // Reusable hotspot map: one dot per table that has a tableHotspots entry,
+    // positioned by xPct/yPct over this.restaurant.tableMapImage. Lock status
+    // per dot comes from the exact same Restaurants.isTableAvailable check
+    // the button list above uses, for the same partySize/dateTime — so a dot
+    // can never disagree with what the button list would have shown. Only
+    // available dots get data-table-id, so the existing delegated click
+    // listener on this.tableList (which calls this.selectTable) picks them up
+    // for free; locked/too-small dots have no data-table-id, so that same
+    // listener silently ignores clicks on them (kept non-disabled, not
+    // `disabled`, purely so their hover tooltip below still fires reliably —
+    // disabled form controls suppress :hover in some browsers).
+    renderTableHotspotMap(partySize, dateTime) {
+      const hotspots = this.restaurant.tableHotspots;
+
+      const dots = this.restaurant.tableLayout
+        .filter((table) => hotspots[table.id])
+        .map((table) => {
+          const { xPct, yPct } = hotspots[table.id];
+          const isSelected = table.id === this.selectedTableId;
+          const isAvailable = Restaurants.isTableAvailable(table, partySize, dateTime);
+
+          const statusClass = isSelected ? 'is-selected' : isAvailable ? 'is-available' : 'is-locked';
+
+          // The waitlist-join prompt elsewhere already covers "nothing fits at
+          // all" — this tooltip is just per-dot context for why THIS one
+          // isn't pickable, so a guest doesn't have to guess between the two
+          // possible reasons.
+          const reason = table.capacity < partySize ? 'Too small for your party' : 'Locked for this time';
+
+          return `
+            <button type="button" class="book-now-table-hotspot ${statusClass}"
+              style="left: ${xPct}%; top: ${yPct}%;"
+              ${isAvailable ? `data-table-id="${table.id}" title="Table ${table.number} — Seats ${table.capacity}"` : 'aria-disabled="true"'}>
+              <span>${table.capacity}</span>
+              ${isAvailable ? '' : `<span class="book-now-hotspot-tooltip" role="tooltip">${reason}</span>`}
+            </button>
+          `;
+        }).join('');
+
+      this.tableList.innerHTML = `
+        <div class="book-now-table-map">
+          <img class="book-now-table-map-image" src="${this.restaurant.tableMapImage}" alt="${this.restaurant.title} table map" />
+          ${dots}
+        </div>
+      `;
+    },
+
+    // Shared by the button-grid list and the hotspot map (both just call this
+    // with a table id). The lock is written to the restaurant's own
+    // tableLayout (via Restaurants.set), not just kept on this screen — per
+    // CLAUDE.md, that's what stops the same table/slot from being
+    // double-booked, since the dataset is shared across every guest browsing
+    // the same restaurant. Releasing whatever this session had previously
+    // locked (if anything) before locking the new pick means only one table
+    // is ever locked-but-unconfirmed per session — otherwise switching your
+    // pick would leave the old table permanently locked with no reservation
+    // ever attached to it.
     selectTable(tableId) {
       const dateTime = this.getSelectedDateTime();
       if (!dateTime) return;
@@ -986,14 +1075,23 @@ const UI = {
       const table = this.restaurant.tableLayout.find((candidate) => candidate.id === tableId);
       if (!table) return;
 
+      this.releaseSelectedTableLock();
+
       table.locks[dateTime] = true;
       Restaurants.set(this.restaurant);
       this.selectedTableId = tableId;
+      this.selectedTableDateTime = dateTime;
       this.bookNowSplit.hidden = false;
 
       this.renderTimeSlots();
       this.renderAvailableTables();
       this.renderPricing();
+
+      // Same auto-scroll pattern as joinWaitlist()'s waitlistStatus and
+      // Restaurant View's booking-cap message — carries the guest straight
+      // into the next linear step (Pre-Order) instead of leaving them to
+      // scroll past the now-confirmed Table & Time section themselves.
+      this.preOrderSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
 
     // Single source of the current pricing pipeline result for this render
@@ -1086,7 +1184,7 @@ const UI = {
       this.summaryHeader.innerHTML = `
         <p class="book-now-ticket-restaurant">${this.restaurant.title}</p>
         <p class="text-body-md book-now-ticket-meta">${formatReservationDateTime(dateTime)}</p>
-        <p class="text-body-md book-now-ticket-meta">Party of ${partySize} · Table ${table.id.slice(0, 8)} (Seats ${table.capacity})</p>
+        <p class="text-body-md book-now-ticket-meta">Party of ${partySize} · Table ${table.number} (Seats ${table.capacity})</p>
       `;
     },
 
@@ -1271,6 +1369,13 @@ const UI = {
         couponCode: this.couponInput.value.trim() || null,
         pricingBreakdown: { basePrice, isPeak, peakAdjustment, couponDiscount, membershipDiscount, discount, finalTotal },
       });
+
+      // Clears the tracked selection without releaseSelectedTableLock() —
+      // this table's lock is now a real reservation, not a pending pick, so
+      // the next resetTableSelection() (Book Now's open() runs one on every
+      // entry) must not free it.
+      this.selectedTableId = null;
+      this.selectedTableDateTime = null;
 
       this.confirmButton.disabled = true;
       // Same shape/border spinner pattern as "Find my pick, wisely" — fixed
@@ -1540,7 +1645,7 @@ const UI = {
           <p class="book-now-ticket-restaurant">${getRestaurantName(reservation.restaurantId)}</p>
           <p class="text-body-md book-now-ticket-meta">${formatReservationDateTime(reservation.dateTime)}</p>
           <p class="text-body-md book-now-ticket-meta">
-            Party of ${partySize}${table ? ` · Table ${table.id.slice(0, 8)} (Seats ${table.capacity})` : ''}
+            Party of ${partySize}${table ? ` · Table ${table.number} (Seats ${table.capacity})` : ''}
           </p>
         </div>
 

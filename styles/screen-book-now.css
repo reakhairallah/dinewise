@@ -138,6 +138,96 @@
   gap: var(--space-1);
 }
 
+/* Photo-based table map (see UI.BookNow.renderTableHotspotMap) — used instead
+   of .book-now-table-list's button grid for any restaurant with both
+   tableMapImage and tableHotspots. */
+.book-now-table-map {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin-top: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.book-now-table-map-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.book-now-table-hotspot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  background: var(--primary);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.book-now-table-hotspot:hover {
+  transform: translate(-50%, -50%) scale(1.12);
+}
+
+.book-now-table-hotspot.is-locked {
+  background: var(--destructive);
+  cursor: not-allowed;
+}
+
+.book-now-table-hotspot.is-selected {
+  background: var(--color-primary-fixed-dim);
+  color: var(--foreground);
+  text-shadow: none;
+}
+
+/* Informational-only tooltip for a locked/too-small dot — explains which of
+   the two reasons applies (see UI.BookNow.renderTableHotspotMap). Not a
+   native `title`: those are inconsistent to style and slow to appear, and
+   this dot deliberately isn't a `disabled` button (so :hover keeps firing
+   across browsers), so a plain title would've fought this markup anyway. */
+.book-now-hotspot-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-shadow: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.book-now-table-hotspot.is-locked:hover .book-now-hotspot-tooltip,
+.book-now-table-hotspot.is-locked:focus-visible .book-now-hotspot-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* Clearly visible and clickable in its own right — not tucked behind the
    disabled button it sits next to. */
 .book-now-waitlist-link {

@@ -210,7 +210,7 @@
 
 .dashboard-ring-track {
   fill: none;
-  stroke: var(--color-outline-variant);
+  stroke: var(--border);
   stroke-width: 8;
 }
 

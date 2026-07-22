@@ -48,6 +48,24 @@
   background-color: transparent;
 }
 
+/* Slightly rounder corners + slightly tighter padding than the shared .btn
+   default, scoped to Complete Profile / Log Out / Save Changes / Save & Find
+   My Pick only — every other .btn keeps the default shape. Complete Profile's
+   padding reduction lives in screen-signup.css instead, since .signup-submit
+   there already overrides padding-block and loads after this file. */
+.signup-submit,
+#smart-pick-quickadd-submit,
+.dashboard-logout-btn,
+.dashboard-profile-actions .btn {
+  border-radius: var(--radius-md);
+}
+
+#smart-pick-quickadd-submit,
+.dashboard-logout-btn,
+.dashboard-profile-actions .btn {
+  padding: 12px 20px;
+}
+
 /* =========================================================
    Small dismiss "×" — shared shape/size/background (invitee removal in
    Book Now, the recommendation-reset "×" in Explore's icon slot). Resting
