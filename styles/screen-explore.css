@@ -229,6 +229,12 @@ button.filter-chip-summary:disabled {
   margin-top: var(--space-2);
 }
 
+/* Sustainability badges only (plain .chip, no chip-dietary/chip-allergen
+   class) — same hue as the base .chip fill, just lightened. */
+.card-badges .chip:not(.chip-dietary):not(.chip-allergen) {
+  background-color: color-mix(in srgb, var(--secondary) 60%, white);
+}
+
 .chip-allergen {
   background-color: transparent;
   border-color: var(--destructive);

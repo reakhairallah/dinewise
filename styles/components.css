@@ -456,7 +456,7 @@
 }
 
 .nav-dropdown-item:hover {
-  background-color: var(--card);
+  background-color: var(--secondary);
 }
 
 .nav-dropdown-item-logout {
